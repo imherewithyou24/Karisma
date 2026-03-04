@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Pengaturan warna khusus sesuai tema Kastrat */
         .bg-dark-blue { background-color: #0B192C; }
         .text-dark-blue { color: #0B192C; }
         .hero-section {
@@ -17,6 +16,8 @@
         }
         .tagline-section { padding: 80px 0; }
         .footer-custom { background-color: #060e1a; color: #a0aec0; }
+        /* Kelas untuk menyembunyikan tombol admin sebelum login */
+        .admin-only { display: none; }
     </style>
 </head>
 <body>
@@ -28,12 +29,16 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav align-items-center">
                     <li class="nav-item"><a class="nav-link active" href="#">Beranda</a></li>
                     <li class="nav-item"><a class="nav-link" href="#profil">Profil</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#artikel">Artikel</a></li>
                     <li class="nav-item"><a class="nav-link" href="#berita">Berita</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#dokumentasi">Dokumentasi</a></li>
+                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
+                        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#loginModal" id="loginBtn">Login / Admin</button>
+                    </li>
+                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0 admin-only">
+                        <span class="badge bg-success">Status: Admin Aktif</span>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -49,136 +54,108 @@
 
     <section id="profil" class="py-5">
         <div class="container py-4">
-            <div class="row align-items-center">
-                <div class="col-md-5 text-center mb-4 mb-md-0">
-                    <img src="https://via.placeholder.com/400x500" alt="Foto Ketua" class="img-fluid rounded shadow">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold text-dark-blue">Sambutan Pimpinan Redaksi</h2>
+                <p class="lead text-muted">Membangun Ruang Gagasan Kritis terhadap Dinamika Politik</p>
+            </div>
+            <div class="row align-items-center justify-content-center">
+                <div class="col-md-3 text-center mb-4">
+                    <img src="https://via.placeholder.com/300x400" alt="Ahmad Hafidz Arsya" class="img-fluid rounded shadow mb-3">
+                    <h5 class="fw-bold text-dark-blue mb-0">Ahmad Hafidz Arsya</h5>
+                    <small class="text-muted">Ketua Pelaksana</small>
                 </div>
-                <div class="col-md-7 px-md-5">
-                    <h2 class="fw-bold mb-4 text-dark-blue">Sambutan Ketua Pelaksana</h2>
-                    <p class="lead text-muted">Membangun Ruang Gagasan Kritis terhadap Dinamika Politik</p>
+                <div class="col-md-3 text-center mb-4">
+                    <img src="https://via.placeholder.com/300x400" alt="M. Ikhsan Tegar Alamsyah" class="img-fluid rounded shadow mb-3">
+                    <h5 class="fw-bold text-dark-blue mb-0">M. Ikhsan Tegar A.</h5>
+                    <small class="text-muted">Ketua Pelaksana</small>
+                </div>
+                <div class="col-md-6 px-md-4">
                     <p>Selamat datang di platform KARISMA. Kami hadir sebagai wadah intelektual bagi mahasiswa untuk menyalurkan gagasan, pandangan, dan analisis kritis terhadap isu-isu sosial-politik. Mari bersama-sama membangun budaya literasi politik yang kuat dan berdampak nyata bagi lingkungan sekitar kita.</p>
-                    <div class="mt-4">
-                        <p class="mb-0"><i>Tertanda,</i></p>
-                        <h4 class="fw-bold mt-2 text-dark-blue">M. Ikhsan Tegar Alamsyah</h4>
-                        <p class="text-muted">Ketua Pelaksana KARISMA</p>
-                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="tagline-section bg-dark-blue text-white text-center">
-        <div class="container">
-            <h2 class="display-5 fw-bold mb-3" style="font-family: sans-serif;">GERAKAN NYATA, DAMPAK NYATA</h2>
-            <h4 class="fw-light">VIVA KASTRAT!</h4>
-        </div>
-    </section>
-
-    <section class="py-5 bg-light">
+    <section id="berita" class="py-5 bg-light">
         <div class="container py-4">
-            <h2 class="text-center fw-bold mb-5 text-dark-blue">ANGKET KAMI</h2>
-            <div class="row g-4 justify-content-center">
-                <div class="col-md-5">
-                    <div class="card h-100 shadow-sm text-center p-4 border-0">
-                        <i class="fa-solid fa-bullhorn fa-4x mb-3 text-dark-blue"></i>
-                        <h4 class="card-title fw-bold">Angket Kritik & Saran</h4>
-                        <p class="card-text text-muted">Sampaikan evaluasi dan saran membangun untuk program kerja dan pergerakan HIMA ke depannya.</p>
-                        <a href="#" class="btn btn-outline-dark mt-auto">Isi Angket</a>
-                    </div>
-                </div>
-                <div class="col-md-5">
-                    <div class="card h-100 shadow-sm text-center p-4 border-0">
-                        <i class="fa-solid fa-magnifying-glass-chart fa-4x mb-3 text-dark-blue"></i>
-                        <h4 class="card-title fw-bold">Kawal Isu Politik!</h4>
-                        <p class="card-text text-muted">Ada keresahan terkait kebijakan kampus atau isu daerah? Tuangkan idemu untuk kami angkat dalam kajian.</p>
-                        <a href="#" class="btn btn-outline-dark mt-auto">Lapor Isu</a>
-                    </div>
-                </div>
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <h2 class="fw-bold text-dark-blue m-0">BERITA & KAJIAN</h2>
+                <button class="btn btn-success admin-only"><i class="fa-solid fa-plus me-2"></i>Tambah Naskah</button>
             </div>
-        </div>
-    </section>
-
-    <section id="berita" class="py-5">
-        <div class="container py-4">
-            <h2 class="text-center fw-bold mb-5 text-dark-blue">BERITA & KAJIAN TERBARU</h2>
+            
             <div class="row g-4">
                 <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0">
+                    <div class="card h-100 shadow-sm border-0 position-relative">
+                        <div class="position-absolute top-0 end-0 p-2 admin-only">
+                            <button class="btn btn-warning btn-sm shadow"><i class="fa-solid fa-pen"></i> Edit</button>
+                            <button class="btn btn-danger btn-sm shadow"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                         <img src="https://source.unsplash.com/600x400/?meeting" class="card-img-top" alt="Berita 1">
                         <div class="card-body">
-                            <small class="text-muted">4 Maret 2026</small>
                             <h5 class="card-title fw-bold mt-2">Dinamika Pemilihan Mahasiswa</h5>
                             <p class="card-text">Analisis mengenai tingkat partisipasi mahasiswa dalam merespons kebijakan internal kampus.</p>
                             <a href="#" class="btn btn-primary bg-dark-blue border-0">Baca Selengkapnya</a>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <img src="https://source.unsplash.com/600x400/?discussion" class="card-img-top" alt="Berita 2">
-                        <div class="card-body">
-                            <small class="text-muted">20 Februari 2026</small>
-                            <h5 class="card-title fw-bold mt-2">Dampak Regulasi Pendidikan</h5>
-                            <p class="card-text">Kajian mendalam dari divisi Kastrat terkait pemerataan akses pendidikan di tingkat provinsi.</p>
-                            <a href="#" class="btn btn-primary bg-dark-blue border-0">Baca Selengkapnya</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card h-100 shadow-sm border-0">
-                        <img src="https://source.unsplash.com/600x400/?seminar" class="card-img-top" alt="Berita 3">
-                        <div class="card-body">
-                            <small class="text-muted">15 Februari 2026</small>
-                            <h5 class="card-title fw-bold mt-2">Ruang Bincang Politik</h5>
-                            <p class="card-text">Dokumentasi hasil diskusi terbuka mengurai apatisme politik di kalangan mahasiswa.</p>
-                            <a href="#" class="btn btn-primary bg-dark-blue border-0">Baca Selengkapnya</a>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
 
-    <section class="py-5 bg-light">
-        <div class="container py-4">
-            <h2 class="text-center fw-bold mb-5 text-dark-blue">HUBUNGI KAMI</h2>
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <h5 class="fw-bold">Sekretariat</h5>
-                    <p class="text-muted">
-                        HIMA Psikologi ULM<br>
-                        Fakultas Kedokteran dan Ilmu Kesehatan<br>
-                        Universitas Lambung Mangkurat<br>
-                        Banjarbaru, Kalimantan Selatan
-                    </p>
-                    <div class="mt-4">
-                        <a href="#" class="text-dark-blue me-3 fa-2x"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="#" class="text-dark-blue me-3 fa-2x"><i class="fa-brands fa-medium"></i></a>
-                        <a href="#" class="text-dark-blue fa-2x"><i class="fa-brands fa-whatsapp"></i></a>
-                    </div>
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-dark-blue text-white">
+                    <h5 class="modal-title" id="loginModalLabel"><i class="fa-solid fa-lock me-2"></i>Login Sistem KARISMA</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="col-md-8">
-                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3983.136896263884!2d114.8385!3d-3.4445!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KwMjYnNDAuMiJTIDExNMKwNTAnMTguNiJF!5e0!3m2!1sid!2sid!4v1614138472483!5m2!1sid!2sid" width="100%" height="300" style="border:0; border-radius: 10px;" allowfullscreen="" loading="lazy"></iframe>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-4">Anggota biasa tidak perlu login untuk membaca. Silakan login untuk hak akses publikasi (Admin).</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email Admin</label>
+                        <input type="email" class="form-control" id="emailInput" placeholder="Masukkan email kamu">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Password</label>
+                        <input type="password" class="form-control" id="passwordInput" placeholder="Masukkan password">
+                    </div>
+                    <button class="btn btn-primary bg-dark-blue w-100 fw-bold mt-2" onclick="cekLogin()">Masuk</button>
+                    <div id="pesanError" class="text-danger mt-2 text-center" style="display: none;">Email atau password salah!</div>
                 </div>
             </div>
         </div>
-    </section>
-
-    <footer class="footer-custom py-4 text-center">
-        <div class="container">
-            <h4 class="fw-bold text-white mb-3">KARISMA</h4>
-            <p class="mb-3">Kajian Review Isu Strategis Mahasiswa<br>Divisi Kajian Strategis dan Politik</p>
-            <ul class="list-inline mb-3">
-                <li class="list-inline-item"><a href="#" class="text-decoration-none" style="color:#a0aec0;">Beranda</a></li>
-                <li class="list-inline-item">|</li>
-                <li class="list-inline-item"><a href="#profil" class="text-decoration-none" style="color:#a0aec0;">Profil</a></li>
-                <li class="list-inline-item">|</li>
-                <li class="list-inline-item"><a href="#berita" class="text-decoration-none" style="color:#a0aec0;">Berita</a></li>
-            </ul>
-            <small>&copy; 2026 Divisi Kajian Strategis dan Politik HIMA Psikologi ULM. All rights reserved.</small>
-        </div>
-    </footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function cekLogin() {
+            // Mengambil input dari user
+            let email = document.getElementById('emailInput').value;
+            let pass = document.getElementById('passwordInput').value;
+            
+            // Validasi Login (Password: season44)
+            // Sistem mengecek apakah password sesuai instruksi
+            if (pass === 'season44') {
+                // Menutup modal pop-up
+                let modalEl = document.getElementById('loginModal');
+                let modalObj = bootstrap.Modal.getInstance(modalEl);
+                modalObj.hide();
+
+                // Memunculkan semua fitur khusus Admin
+                let adminElements = document.querySelectorAll('.admin-only');
+                adminElements.forEach(function(el) {
+                    el.style.display = 'block';
+                });
+
+                // Menyembunyikan tombol login awal
+                document.getElementById('loginBtn').style.display = 'none';
+
+                alert('Selamat datang Admin ' + email + '! Mode editing telah diaktifkan.');
+            } else {
+                // Jika salah
+                document.getElementById('pesanError').style.display = 'block';
+            }
+        }
+    </script>
 </body>
 </html>
