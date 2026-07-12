@@ -1,38 +1,82 @@
 // ==========================================
-// 1. SISTEM OTORISASI PORTAL MULTI-ROLES
+// 1. SISTEM OTORISASI PORTAL MULTI-ROLES (GOOGLE & EMAIL)
 // ==========================================
-function prosesLogin() {
-    const user = document.getElementById('usernameInput').value; 
+
+// Daftar Email Panitia Kastrat yang berhak mendapat fitur "Mode Dewa"
+const DAFTAR_ADMIN_KASTRAT = [
+    "2410914320014@mhs.ulm.ac.id",
+    "2510914210051@mhs.ulm.ac.id",
+    "2510914210027@mhs.ulm.ac.id",
+    "2510914310025@mhs.ulm.ac.id",
+    "2510914120021@mhs.ulm.ac.id",
+    "2510914220054@mhs.ulm.ac.id"
+];
+
+// FUNGSI 1: LOGIN MENGGUNAKAN GOOGLE
+function loginDenganGoogle() {
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(googleProvider)
+    .then((result) => {
+        const user = result.user;
+        cekHakAkses(user.email, user.displayName);
+    })
+    .catch((error) => {
+        Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
+    });
+}
+
+// FUNGSI 2: LOGIN MENGGUNAKAN EMAIL & PASSWORD
+function loginDenganEmail() {
+    const email = document.getElementById('emailInput').value;
     const pass = document.getElementById('passwordInput').value;
-    if (user.trim() === '') { 
-        Swal.fire({title: 'Oops...', text: 'Nama login tidak boleh kosong!', icon: 'error'}); 
+    
+    if (email.trim() === '' || pass.trim() === '') { 
+        Swal.fire('Oops...', 'Email dan Password tidak boleh kosong!', 'error'); 
         return; 
     }
-    
+
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then((userCredential) => {
+        const user = userCredential.user;
+        cekHakAkses(user.email, user.displayName || "Admin");
+    })
+    .catch((error) => {
+        Swal.fire({title: 'Akses Ditolak', text: 'Email atau password salah / belum terdaftar.', icon: 'error'});
+    });
+}
+
+// FUNGSI 3: PENGECEKAN HAK AKSES KETAT (ADMIN VS GUEST)
+function cekHakAkses(emailPengguna, namaPengguna) {
     // Reset status visibilitas elemen
     document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
-    
-    if (pass === 'kastratdewa') {
+
+    // Cek apakah email yang login ADA di dalam daftar rahasia
+    if (DAFTAR_ADMIN_KASTRAT.includes(emailPengguna)) {
+        // JIKA DIA ADALAH ADMIN KASTRAT
         window.role = 'mod'; 
         document.getElementById('mainBody').classList.add('admin-mode');
-        Swal.fire({ icon: 'success', title: 'GOD MODE AKTIF', text: `Selamat datang Moderator Agung, ${user}.`, timer: 2500, showConfirmButton: false });
-        document.getElementById('loginBtnText').innerHTML = `<i class="fa-solid fa-crown me-1"></i> Moderator`;
+        
+        Swal.fire({ icon: 'success', title: 'GOD MODE AKTIF', text: `Otorisasi Diterima, ${namaPengguna || emailPengguna}.`, timer: 2500, showConfirmButton: false });
+        
+        document.getElementById('loginBtnText').innerHTML = `<i class="fa-solid fa-crown me-1"></i> Mode Dewa`;
         document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-danger');
+        
         document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
-    } else if (pass === 'season44') {
-        window.role = 'admin'; 
-        document.getElementById('mainBody').classList.add('admin-mode');
-        Swal.fire({ icon: 'success', title: 'Manajemen Cloud Terbuka', text: `Mode Administrasi aktif untuk ${user}.`, timer: 2000, showConfirmButton: false });
-        document.getElementById('loginBtnText').innerHTML = `<i class="fa-solid fa-user-shield me-1"></i> Admin`;
-        document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-warning');
-        document.querySelectorAll('.admin-only').forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
+        
     } else {
+        // JIKA DIA BUKAN ADMIN (MAHASISWA BIASA) - Walaupun passwordnya benar
         window.role = 'guest'; 
         document.getElementById('mainBody').classList.remove('admin-mode');
-        Swal.fire({ icon: 'info', title: 'Akses Publik Berhasil', text: `Halo rekan pergerakan, ${user}.`, timer: 2000, showConfirmButton: false });
-        document.getElementById('loginBtnText').innerHTML = `<i class="fa-regular fa-circle-user me-1"></i> ${user}`;
+        
+        Swal.fire({ icon: 'info', title: 'Akses Publik Berhasil', text: `Akses Mode Dewa ditolak. Anda masuk sebagai Pembaca.`, timer: 3000, showConfirmButton: false });
+        
+        // Ambil nama depan saja untuk di navbar
+        let namaDepan = namaPengguna ? namaPengguna.split(' ')[0] : 'Mahasiswa';
+        document.getElementById('loginBtnText').innerHTML = `<i class="fa-regular fa-circle-user me-1"></i> ${namaDepan}`;
+        document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-success');
     }
     
+    // Refresh UI
     if(typeof updateUISecaraRealtime === "function") updateUISecaraRealtime(); 
     bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
 }
@@ -202,7 +246,6 @@ async function tambahAgenda(){
         window.db.ref('karisma_agenda').set(d);
     } 
 }
-// Fungsi hapus pendukung agenda pergerakan
 function hapusAgenda(i){ let d = window.globalData.karisma_agenda; d.splice(i, 1); window.db.ref('karisma_agenda').set(d); }
 
 async function tambahDokumen(){ 
