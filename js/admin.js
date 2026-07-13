@@ -11,30 +11,55 @@ const DAFTAR_ADMIN_KASTRAT = [
     "2510914220054@mhs.ulm.ac.id"
 ];
 
+// 🔥 ALARM AUTO-LOGIN: Langsung buka gembok kalau user di-refresh
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        handleUserLogin(user, false);
+    }
+});
+
 function loginDenganGoogle() {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     firebase.auth().signInWithPopup(googleProvider)
     .then((result) => {
-        handleUserLogin(result.user);
+        handleUserLogin(result.user, true);
     }).catch((error) => {
         Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
     });
 }
 
-function handleUserLogin(user) {
+function loginDenganEmail() {
+    const email = document.getElementById('emailInput').value;
+    const pass = document.getElementById('passwordInput').value;
+    
+    if (email.trim() === '' || pass.trim() === '') { 
+        return Swal.fire('Oops...', 'Email dan Password tidak boleh kosong!', 'error'); 
+    }
+
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then((userCredential) => {
+        handleUserLogin(userCredential.user, true);
+    })
+    .catch((error) => {
+        Swal.fire({title: 'Akses Ditolak', text: 'Email atau password salah / belum terdaftar.', icon: 'error'});
+    });
+}
+
+// MESIN UTAMA: Memproses Data Akun, Gamifikasi & Membuka Gembok
+function handleUserLogin(user, isBaruLoginManual = false) {
     window.currentUid = user.uid;
     const userRef = window.db.ref('karisma_users/' + user.uid);
     const today = new Date().toLocaleDateString('id-ID');
 
-    userRef.once('value', snapshot => {
+    userRef.once('value').then(snapshot => {
         let userData = snapshot.val();
         
         // JIKA USER BARU PERTAMA KALI LOGIN
         if (!userData) {
             userData = {
-                nama: user.displayName || 'Mahasiswa Anonim',
+                nama: user.displayName || user.email.split('@')[0] || 'Mahasiswa',
                 email: user.email,
-                foto: user.photoURL || 'https://via.placeholder.com/150',
+                foto: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || 'M') + '&background=0B192C&color=FFC107',
                 points: 0,
                 streak: 1,
                 lastLogin: today,
@@ -53,15 +78,21 @@ function handleUserLogin(user) {
                     userData.streak = 1; // Putus streak
                 }
                 userData.lastLogin = today;
-                userData.points += 5; // Poin login harian
-                Swal.fire({ title: '+5 Poin!', text: `Login harian berhasil. Streak: ${userData.streak} hari🔥`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+                userData.points += 5; // Reward login harian
+                
+                // Hanya munculkan notif jika mereka login manual (bukan karena refresh web)
+                if(isBaruLoginManual) {
+                    Swal.fire({ title: '+5 Poin!', text: `Login harian berhasil. Streak: ${userData.streak} hari🔥`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+                }
             }
+            // Pastikan foto selalu ada
+            if(!userData.foto) userData.foto = user.photoURL || 'https://ui-avatars.com/api/?name=' + userData.nama + '&background=0B192C&color=FFC107';
         }
         
         // Simpan pembaruan data ke Firebase
         userRef.set(userData);
         
-        // Penentuan Role (Dewa vs Mahasiswa Biasa)
+        // Pengecekan Kasta (Mode Dewa vs Mahasiswa Biasa)
         if (DAFTAR_ADMIN_KASTRAT.includes(user.email)) {
             window.role = 'mod'; 
             document.getElementById('mainBody').classList.add('admin-mode');
@@ -76,104 +107,26 @@ function handleUserLogin(user) {
             document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-success');
         }
 
-        // Buka gembok overlay Dasbor Kanan
-        if(document.getElementById('authOverlay')) document.getElementById('authOverlay').style.display = 'none';
+        // 🔥 FIX BUG GEMBOK: Copot paksa class 'd-flex' milik Bootstrap agar gembok hilang
+        let overlay = document.getElementById('authOverlay');
+        if(overlay) {
+            overlay.classList.remove('d-flex');
+            overlay.classList.add('d-none');
+        }
         
-        // Tutup Modal
-        bootstrap.Modal.getInstance(document.getElementById('loginModal'))?.hide();
+        // Tutup Modal Login jika terbuka
+        const loginModalEl = document.getElementById('loginModal');
+        if(loginModalEl) {
+            const modal = bootstrap.Modal.getInstance(loginModalEl);
+            if(modal) modal.hide();
+        }
         
-        // Render UI Data Personal
-        renderPersonalDashboard(userData);
-        checkAndAwardBadges(user.uid, userData);
+        // Render UI Data Personal & Cek Badge Gamifikasi (Berasal dari app.js)
+        if(typeof renderPersonalDashboard === "function") renderPersonalDashboard(userData);
+        if(typeof checkAndAwardBadges === "function") checkAndAwardBadges(user.uid, userData);
     });
 }
 
-// FUNGSI 1: LOGIN MENGGUNAKAN GOOGLE
-function loginDenganGoogle() {
-    const googleProvider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(googleProvider)
-    .then((result) => {
-        const user = result.user;
-        // Lempar data nama, email, dan foto profil Google ke mesin pengecek
-        cekHakAkses(user.email, user.displayName, user.photoURL);
-    })
-    .catch((error) => {
-        Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
-    });
-}
-
-// FUNGSI 2: LOGIN MENGGUNAKAN EMAIL & PASSWORD
-function loginDenganEmail() {
-    const email = document.getElementById('emailInput').value;
-    const pass = document.getElementById('passwordInput').value;
-    
-    if (email.trim() === '' || pass.trim() === '') { 
-        Swal.fire('Oops...', 'Email dan Password tidak boleh kosong!', 'error'); 
-        return; 
-    }
-
-    firebase.auth().signInWithEmailAndPassword(email, pass)
-    .then((userCredential) => {
-        const user = userCredential.user;
-        cekHakAkses(user.email, user.displayName || "Admin", null);
-    })
-    .catch((error) => {
-        Swal.fire({title: 'Akses Ditolak', text: 'Email atau password salah / belum terdaftar.', icon: 'error'});
-    });
-}
-
-// FUNGSI 3: PENGECEKAN HAK AKSES KETAT & REGISTRASI OTOMATIS
-function cekHakAkses(emailPengguna, namaPengguna, fotoProfil = null) {
-    // 1. Reset status visibilitas elemen Edit
-    document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
-
-    // 2. Bersihkan karakter aneh di email untuk dijadikan ID unik di Database
-    let userId = emailPengguna.replace(/[^a-zA-Z0-9]/g, ''); 
-
-    // 3. Cek apakah email yang login ADA di dalam daftar rahasia panitia
-    if (DAFTAR_ADMIN_KASTRAT.includes(emailPengguna)) {
-        // JIKA DIA ADALAH ADMIN KASTRAT
-        window.role = 'mod'; 
-        document.getElementById('mainBody').classList.add('admin-mode');
-        
-        Swal.fire({ icon: 'success', title: 'GOD MODE AKTIF', text: `Otorisasi Diterima, ${namaPengguna || emailPengguna}.`, timer: 2500, showConfirmButton: false });
-        
-        document.getElementById('loginBtnText').innerHTML = `<i class="fa-solid fa-crown me-1"></i> Mode Dewa`;
-        document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-danger');
-        
-        document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
-        
-    } else {
-        // JIKA DIA BUKAN ADMIN (MAHASISWA UMUM / PENGUNJUNG)
-        window.role = 'guest'; 
-        document.getElementById('mainBody').classList.remove('admin-mode');
-        
-        // Simpan/Daftarkan profil mahasiswa ini ke Database Firebase!
-        window.db.ref('karisma_users/' + userId).set({
-            nama: namaPengguna || 'Mahasiswa',
-            email: emailPengguna,
-            foto: fotoProfil || '',
-            login_terakhir: new Date().toLocaleString('id-ID'),
-            role: 'pengunjung'
-        });
-        
-        Swal.fire({ icon: 'info', title: 'Registrasi Berhasil', text: `Halo ${namaPengguna || 'Rekan'}, Anda terdaftar sebagai Pengunjung. Akses edit ditolak.`, timer: 3000, showConfirmButton: false });
-        
-        // Ubah tombol Portal menjadi Nama & Foto Profil Google mahasiswa tersebut
-        let namaDepan = namaPengguna ? namaPengguna.split(' ')[0] : 'Mahasiswa';
-        let imgTag = fotoProfil ? `<img src="${fotoProfil}" class="rounded-circle me-1" width="22" height="22" style="object-fit:cover;">` : `<i class="fa-regular fa-circle-user me-1"></i>`;
-        
-        document.getElementById('loginBtnText').innerHTML = `${imgTag} ${namaDepan}`;
-        document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-success');
-    }
-    
-    // Refresh UI dan Poin Gamifikasi (jika ada)
-    if(typeof updateUISecaraRealtime === "function") updateUISecaraRealtime(); 
-    if(typeof initGamification === "function") initGamification();
-    
-    // Tutup pop-up login
-    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
-}
 
 // ==========================================
 // 2. LIVE EDITING KONTEN & GAYA FONT (INLINE)
@@ -213,9 +166,7 @@ async function editTeks(elId, label) {
     });
     
     if (formValues) { 
-        // Simpan Teksnya
         window.db.ref(elId).set(formValues.text); 
-        // Simpan Font-nya ke brankas khusus dengan awalan font_
         window.db.ref('font_' + elId).set(formValues.font); 
         Swal.fire({title: 'Tersimpan!', text: 'Perubahan teks dan font berhasil mengudara.', icon: 'success', timer: 2000, showConfirmButton: false}); 
     }
@@ -427,6 +378,7 @@ async function ubahLink(t) {
 function exportDataCSV(tipe) {
     Swal.fire({title: 'Ekstraksi Arsip', text: `Berhasil menarik laporan data mentah ${tipe} langsung dari server Singapore!`, icon: 'success'});
 }
+
 // ==========================================
 // FITUR ADMIN: EDIT GAMIFICATION (POLL & DAILY)
 // ==========================================
