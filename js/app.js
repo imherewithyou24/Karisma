@@ -7,52 +7,57 @@ window.db.ref().on('value', (snapshot) => {
 });
 
 function updateUISecaraRealtime() {
-    // 1. SMART DETECTION: Otomatis mencari semua teks yang punya class "editable-text"
+    // 1. SMART DETECTION: Update teks
     document.querySelectorAll('.editable-text').forEach(el => {
         if(el.id) {
-            // Pasang teks dari Cloud jika ada
-            if(window.globalData[el.id] !== undefined) {
+            // Hanya ganti teks jika datanya valid dan tidak kosong
+            if(window.globalData[el.id] !== undefined && window.globalData[el.id].trim() !== '') {
                 el.innerText = window.globalData[el.id]; 
             }
-            // Pasang gaya Font dari Cloud jika ada
             if(window.globalData['font_' + el.id]) {
                 el.style.fontFamily = window.globalData['font_' + el.id];
             } else {
-                el.style.fontFamily = ""; // Reset ke font bawaan tema
+                el.style.fontFamily = ""; 
             }
         }
     });
 
-    // 2. Render komponen gambar/logo dari cloud
+    // 2. FIX BUG IPHONE: Render Gambar dengan Filter Ketat
     const imgIds = ['heroBg', 'logo1', 'logo2', 'logo3'];
     imgIds.forEach(id => {
-        if(window.globalData[id]) {
+        // HANYA pasang gambar jika link-nya valid (lebih dari 5 huruf/bukan kosong)
+        if(window.globalData[id] && window.globalData[id].length > 5) {
             if(id === 'heroBg') {
-                document.getElementById('heroSection').style.backgroundImage = `linear-gradient(rgba(11, 25, 44, 0.85), rgba(11, 25, 44, 0.9)), url('${window.globalData[id]}')`;
+                // Dipecah spesifik agar Safari iOS tidak bingung membacanya
+                let heroEl = document.getElementById('heroSection');
+                heroEl.style.backgroundImage = `linear-gradient(rgba(11, 25, 44, 0.85), rgba(11, 25, 44, 0.9)), url('${window.globalData[id]}')`;
+                heroEl.style.backgroundSize = 'cover';
+                heroEl.style.backgroundPosition = 'center';
+                heroEl.style.backgroundRepeat = 'no-repeat';
             } else if(document.getElementById(id)) {
                 document.getElementById(id).src = window.globalData[id];
             }
         }
     });
 
-    // 3. Sinkronisasi warna tema
+    // 3. Sinkronisasi warna
     if(window.globalData.karisma_theme) {
         document.documentElement.style.setProperty('--dark-blue', window.globalData.karisma_theme);
     }
     
-    // 4. RENDER ULANG MODUL DASAR
+    // 4. Render Modul Lain
     renderTracker();
     renderAgenda();
     renderRepositori();
     if(document.getElementById('searchInput')) cariBerita(); 
     if(window.activeNewsId) renderKomentar(window.activeNewsId); 
     
-    // 5. 🔥 INI YANG KRUSIAL: Render Modul Gamifikasi Baru
+    // 5. Gamifikasi
     renderPollingRealtime();
     renderDailyChallenge();
     renderLeaderboard();
     
-    // 6. Update statistik dashboard Admin
+    // 6. Update stat
     let inboxD = window.globalData.karisma_inbox || [];
     if(document.getElementById('statInbox')) document.getElementById('statInbox').innerText = inboxD.length;
     if(window.globalData.karisma_visitors && document.getElementById('statVisitor')) {
