@@ -98,7 +98,7 @@
                     </div>
                 </div>
                 <div class="col-md-7 px-md-5">
-                    <h2 class="fw-bold mb-3 text-dark-blue">Profil Instansi</h2>
+                    <h2 id="judulProfil" class="fw-bold mb-3 text-dark-blue editable-text">Profil Instansi</h2>
                     <hr style="width: 50px; height: 4px; background-color: var(--accent-gold); border: none;">
                     <p id="teksKutipan" class="lead text-muted fst-italic mb-4 editable-text">"Membangun Ruang Gagasan Kritis terhadap Dinamika Politik"</p>
                     <p id="teksProfilDetail" class="text-justify editable-text" style="text-align: justify;">Selamat datang di platform KARISMA. Kami hadir sebagai wadah intelektual bagi mahasiswa untuk menyalurkan gagasan, pandangan, dan analisis kritis terhadap isu-isu sosial-politik baik di tingkat regional kampus, daerah, hingga nasional. Mari bersama-sama membangun budaya literasi politik yang kuat, argumentatif, dan berdampak nyata bagi lingkungan sekitar kita.</p>
@@ -116,8 +116,8 @@
     <section id="kawaljanji" class="py-5 bg-light">
         <div class="container py-4">
             <div class="text-center mb-5">
-                <h2 class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2">KAWAL JANJI KAMPUS</h2>
-                <p class="text-muted mt-2">Transparansi progres kebijakan Rektorat & BEM Universitas Lambung Mangkurat.</p>
+                <h2 id="judulKawal" class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2 editable-text">KAWAL JANJI KAMPUS</h2>
+                <p id="subKawal" class="text-muted mt-2 editable-text">Transparansi progres kebijakan Rektorat & BEM Universitas Lambung Mangkurat.</p>
                 <button class="btn btn-sm btn-success admin-only mt-2" onclick="tambahJanji()"><i class="fa-solid fa-plus"></i> Tambah Isu/Janji</button>
             </div>
             <div class="row justify-content-center"><div class="col-md-8" id="trackerContainer"><p class="text-center text-muted"><i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan ke server...</p></div></div>
@@ -127,8 +127,8 @@
     <section id="agenda" class="py-5">
         <div class="container py-4">
             <div class="text-center mb-5">
-                <h2 class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2">AGENDA PERGERAKAN</h2>
-                <p class="text-muted mt-2">Jadwal diskusi publik, konsolidasi, dan audiensi terdekat Kastrat.</p>
+                <h2 id="judulAgenda" class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2 editable-text">AGENDA PERGERAKAN</h2>
+                <p id="subAgenda" class="text-muted mt-2 editable-text">Jadwal diskusi publik, konsolidasi, dan audiensi terdekat Kastrat.</p>
                 <button class="btn btn-sm btn-success admin-only mt-2" onclick="tambahAgenda()"><i class="fa-solid fa-calendar-plus"></i> Tambah Agenda</button>
             </div>
             <div class="row justify-content-center">
@@ -140,8 +140,8 @@
     <section id="berita" class="py-5 bg-light">
         <div class="container py-4">
             <div class="text-center mb-4">
-                <h2 class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2">KAWAL ISU POLITIK (HOT TOPIK)</h2>
-                <p class="text-muted mt-2"><i class="fa-solid fa-clock-rotate-left me-2"></i>Pusat arsip naskah kajian Kastrat (Rotasi per jam).</p>
+                <h2 id="judulBerita" class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2 editable-text">KAWAL ISU POLITIK (HOT TOPIK)</h2>
+                <p id="subBerita" class="text-muted mt-2 editable-text"><i class="fa-solid fa-clock-rotate-left me-2"></i>Pusat arsip naskah kajian Kastrat (Rotasi per jam).</p>
             </div>
             
             <div class="row justify-content-center mb-5">
@@ -158,12 +158,11 @@
         </div>
     </section>
 
-    <!-- REPOSITORI SECTION UPGRADE (Tabel Lebih Rapih & Tegas) -->
     <section id="repositori" class="py-5 bg-dark-blue text-white">
         <div class="container py-5">
             <div class="text-center mb-5">
-                <h2 class="fw-bold text-warning d-inline-block border-bottom border-4 border-light pb-2">PERPUSTAKAAN KAJIAN (PDF)</h2>
-                <p class="text-light opacity-75 mt-2">Unduh naskah akademik, policy brief, dan hasil kajian resmi KARISMA.</p>
+                <h2 id="judulRepo" class="fw-bold text-warning d-inline-block border-bottom border-4 border-light pb-2 editable-text">PERPUSTAKAAN KAJIAN (PDF)</h2>
+                <p id="subRepo" class="text-light opacity-75 mt-2 editable-text">Unduh naskah akademik, policy brief, dan hasil kajian resmi KARISMA.</p>
                 <button class="btn btn-sm btn-success admin-only mt-2" onclick="tambahDokumen()"><i class="fa-solid fa-upload"></i> Unggah Dokumen Baru</button>
             </div>
             <div class="row justify-content-center">
@@ -194,7 +193,7 @@
                         
                         <div class="carousel-item active">
                             <span class="badge bg-danger mb-3" id="pollProgressTxt">Isu 1 dari 3</span>
-                            <h3 class="fw-bold text-dark-blue text-center mb-2"><i class="fa-solid fa-scale-balanced text-warning me-2"></i>Polling Suara Mahasiswa</h3>
+                            <h3 id="judulPoling" class="fw-bold text-dark-blue text-center mb-2 editable-text"><i class="fa-solid fa-scale-balanced text-warning me-2"></i>Polling Suara Mahasiswa</h3>
                             <p class="fs-5 text-center text-muted mb-4" id="pollQuestion">Penilaian Anda terhadap draf RUU Penyiaran?</p>
                             
                             <div class="d-grid gap-3" id="pollOptionsBox">
@@ -212,8 +211,8 @@
                         </div>
 
                         <div class="carousel-item">
-                            <h3 class="fw-bold text-primary text-center mb-2"><i class="fa-solid fa-brain text-warning me-2"></i>Kompas Politik Mahasiswa</h3>
-                            <p class="fs-6 text-center text-muted mb-4">Cari tahu kecenderungan kepribadian pergerakanmu di kampus!</p>
+                            <h3 id="judulKuis" class="fw-bold text-primary text-center mb-2 editable-text"><i class="fa-solid fa-brain text-warning me-2"></i>Kompas Politik Mahasiswa</h3>
+                            <p id="subKuis" class="fs-6 text-center text-muted mb-4 editable-text">Cari tahu kecenderungan kepribadian pergerakanmu di kampus!</p>
                             <div id="quizContainer">
                                 <div class="text-center mt-5 mb-4"><button class="btn btn-primary btn-lg bg-dark-blue rounded-pill px-5 fw-bold" onclick="mulaiKuis()">Mulai Tes (8 Soal)</button></div>
                             </div>
@@ -221,8 +220,8 @@
                         </div>
 
                         <div class="carousel-item">
-                            <h3 class="fw-bold text-success text-center mb-2"><i class="fa-solid fa-puzzle-piece text-warning me-2"></i>Teka-Teki Pergerakan</h3>
-                            <p id="tekaTekiSoal" class="fs-4 text-center text-dark-blue mb-4 fw-bold mt-4">"Aku sering diucapkan saat aksi, tapi jarang diwujudkan oleh politisi. Apakah aku?"</p>
+                            <h3 id="judulTeka" class="fw-bold text-success text-center mb-2 editable-text"><i class="fa-solid fa-puzzle-piece text-warning me-2"></i>Teka-Teki Pergerakan</h3>
+                            <p id="tekaTekiSoal" class="fs-4 text-center text-dark-blue mb-4 fw-bold mt-4 editable-text">"Aku sering diucapkan saat aksi, tapi jarang diwujudkan oleh politisi. Apakah aku?"</p>
                             <div class="text-center mt-4">
                                 <input type="text" id="jawabanTekaTeki" class="form-control form-control-lg text-center mx-auto mb-3" style="max-width: 300px;" placeholder="Tebak di sini...">
                                 <button class="btn btn-success btn-lg rounded-pill px-5 fw-bold" onclick="cekTekaTeki()">Kunci Jawaban</button>
@@ -231,8 +230,8 @@
                         </div>
 
                         <div class="carousel-item">
-                            <h3 class="fw-bold text-danger text-center mb-2"><i class="fa-solid fa-dharmachakra text-warning me-2"></i>Spinner Nasihat Pergerakan</h3>
-                            <p class="fs-6 text-center text-muted mb-2">Lelah ngoding dan kajian? Putar roda nasibmu hari ini!</p>
+                            <h3 id="judulGacha" class="fw-bold text-danger text-center mb-2 editable-text"><i class="fa-solid fa-dharmachakra text-warning me-2"></i>Spinner Nasihat Pergerakan</h3>
+                            <p id="subGacha" class="fs-6 text-center text-muted mb-2 editable-text">Lelah ngoding dan kajian? Putar roda nasibmu hari ini!</p>
                             <div class="mx-auto mt-4" style="width: 260px; height: 260px; position: relative;">
                                 <div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #dc3545; z-index: 10; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.3));"></div>
                                 <div id="gachaWheel" class="gacha-wheel"></div>
@@ -253,7 +252,7 @@
 
     <section id="angket" class="py-5">
         <div class="container py-5">
-            <div class="text-center mb-5"><h2 class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2">LAYANAN ASPIRASI & OPINI</h2></div>
+            <div class="text-center mb-5"><h2 id="judulAngket" class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2 editable-text">LAYANAN ASPIRASI & OPINI</h2></div>
             <div class="row g-4 justify-content-center">
                 <div class="col-md-4">
                     <div class="card h-100 shadow text-center p-4 border-0 hover-card rounded-4">
@@ -287,12 +286,12 @@
         <div class="container py-4">
             <div class="row g-5 align-items-center">
                 <div class="col-md-5">
-                    <h3 class="fw-bold mb-4 text-warning"><i class="fa-solid fa-location-dot me-2"></i>Sekretariat Pusat</h3>
-                    <p class="fs-5 text-light opacity-75">
+                    <h3 id="judulMaps" class="fw-bold mb-4 text-warning editable-text"><i class="fa-solid fa-location-dot me-2"></i>Sekretariat Pusat</h3>
+                    <p id="teksMaps" class="fs-5 text-light opacity-75 editable-text">
                         Program Studi Psikologi<br>Fakultas Kedokteran dan Ilmu Kesehatan (FKIK)<br>Universitas Lambung Mangkurat<br>Banjarbaru, Kalimantan Selatan
                     </p>
                     <hr class="my-4 border-light opacity-25">
-                    <h5 class="fw-bold mb-3">Ikuti Pergerakan Kami:</h5>
+                    <h5 id="judulSosmed" class="fw-bold mb-3 editable-text">Ikuti Pergerakan Kami:</h5>
                     <div class="d-flex gap-3 mt-3">
                         <a href="https://www.instagram.com/kastratpolpalingcihuy" target="_blank" class="soc-icon ig text-decoration-none"><i class="fa-brands fa-instagram fs-4"></i></a>
                         <a href="https://x.com" target="_blank" class="soc-icon x text-decoration-none"><i class="fa-brands fa-x-twitter fs-4"></i></a>
@@ -312,7 +311,7 @@
     <footer class="footer-custom py-4 text-center border-top border-warning border-4">
         <div class="container">
             <h4 class="fw-bold text-white mb-2"><i class="fa-solid fa-landmark dome text-warning me-2"></i>KARISMA</h4>
-            <p class="mb-3 opacity-50 small">Divisi Kajian Strategis dan Politik HIMA Psikologi ULM</p>
+            <p id="teksFooter" class="mb-3 opacity-50 small editable-text">Divisi Kajian Strategis dan Politik HIMA Psikologi ULM</p>
             <small class="text-light opacity-50">© 2026 Universitas Lambung Mangkurat. All rights reserved.</small>
         </div>
     </footer>
