@@ -262,93 +262,156 @@ window.filterRepositori = function() {
 };
 
 // ==========================================
-// 5. MODUL INTERAKTIF & UTILITAS GLOBAL
+// 5. ENGINE GAMIFICATION & INTERAKTIF (NEW)
 // ==========================================
-const pollDataDefault = [
-    { q: "Penilaian Anda terhadap draf RUU Penyiaran?", opts: ["Menolak Keras", "Perlu dikaji ulang", "Mendukung"], stats: [78, 15, 7] },
-    { q: "Apakah Transparansi UKT di ULM sudah ideal?", opts: ["Sudah Adil", "Kurang Sosialisasi", "Sangat Memberatkan"], stats: [12, 35, 53] }
-];
-let window_cPoll = 0;
 
-function loadCurrentPoll() {
-    let pd = window.globalData.karisma_poll || pollDataDefault;
-    if(window_cPoll >= pd.length) { 
-        document.getElementById('pollQuestion').innerText = "Terima kasih! Semua voting isu telah selesai diikuti."; 
-        document.getElementById('pollOptionsBox').style.display = 'none'; 
-        return;
+// --- SISTEM USER (POIN & STREAK LOKAL) ---
+function initGamification() {
+    let userStats = JSON.parse(localStorage.getItem('karisma_user_stats')) || { points: 0, streak: 0, lastLogin: null, badges: [] };
+    const today = new Date().toLocaleDateString('id-ID');
+    
+    // Logika Streak
+    if (userStats.lastLogin !== today) {
+        let yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        if (userStats.lastLogin === yesterday.toLocaleDateString('id-ID')) {
+            userStats.streak += 1; // Sambung streak
+        } else {
+            userStats.streak = 1; // Putus, ulang dari 1
+        }
+        userStats.lastLogin = today;
+        localStorage.setItem('karisma_user_stats', JSON.stringify(userStats));
     }
-    if(document.getElementById('pollProgressTxt')) {
-        document.getElementById('pollProgressTxt').innerText = `Isu ${window_cPoll + 1} dari ${pd.length}`;
-        document.getElementById('pollQuestion').innerText = pd[window_cPoll].q;
-        document.getElementById('pollOptionsBox').style.display = 'grid';
-        document.getElementById('pollResultsBox').style.display = 'none';
+    
+    // Update UI Gamifikasi
+    if(document.getElementById('userPoints')) {
+        document.getElementById('userPoints').innerText = userStats.points;
+        document.getElementById('userStreak').innerText = userStats.streak;
         
-        const buttons = document.getElementById('pollOptionsBox').getElementsByTagName('button');
-        if(buttons.length >= 3) {
-            buttons[0].innerText = `A. ${pd[window_cPoll].opts[0]}`;
-            buttons[1].innerText = `B. ${pd[window_cPoll].opts[1]}`;
-            buttons[2].innerText = `C. ${pd[window_cPoll].opts[2]}`;
+        let title = userStats.points > 200 ? "Aktivis Garis Keras" : (userStats.points > 50 ? "Pengamat Aktif" : "Mahasiswa Biasa");
+        document.getElementById('userTitleGami').innerText = title;
+        
+        // Cek Nama dari Auth
+        if(window.auth && window.auth.currentUser) {
+            let nama = window.auth.currentUser.displayName || window.auth.currentUser.email.split('@')[0];
+            document.getElementById('userNameGami').innerText = nama;
+            document.getElementById('userAvatarInitials').innerText = nama.charAt(0).toUpperCase();
         }
     }
 }
+setTimeout(initGamification, 1000); // Panggil setelah load
 
-function jawabPoll(idxOption) {
-    document.getElementById('pollOptionsBox').style.display = 'none';
-    document.getElementById('pollResultsBox').style.display = 'block';
+function tambahPoin(jumlah, alasan) {
+    let userStats = JSON.parse(localStorage.getItem('karisma_user_stats'));
+    userStats.points += jumlah;
+    localStorage.setItem('karisma_user_stats', JSON.stringify(userStats));
+    initGamification();
+    Swal.fire({ title: `+${jumlah} Poin!`, text: alasan, icon: 'success', timer: 2000, showConfirmButton: false, toast: true, position: 'top-end' });
+}
+
+// --- 5.1 POLLING ANIMASI REALTIME ---
+function renderPollingRealtime() {
+    let defaultPoll = { 
+        q: "Apakah transparansi UKT saat ini sudah cukup jelas?", 
+        opts: ["Sudah Sangat Jelas", "Cukup, tapi perlu ditingkatkan", "Sangat Gelap & Membingungkan"], 
+        votes: [12, 45, 189], 
+        reactions: { fire: 12, thumbsUp: 5, thumbsDown: 2 } 
+    };
+    let data = window.globalData.karisma_modern_poll || defaultPoll;
     
-    let pd = window.globalData.karisma_poll || pollDataDefault;
-    pd[window_cPoll].stats[idxOption] = parseInt(pd[window_cPoll].stats[idxOption]) + 1;
-    window.db.ref('karisma_poll').set(pd);
+    if(!document.getElementById('pollQuestionUI')) return;
+    document.getElementById('pollQuestionUI').innerText = data.q;
     
-    const s = pd[window_cPoll].stats;
-    const colors = ["bg-danger", "bg-warning text-dark", "bg-primary"];
+    let totalVotes = data.votes.reduce((a, b) => a + b, 0);
+    document.getElementById('pollTotalVotes').innerText = `${totalVotes} Suara Masuk`;
     
-    document.getElementById('pollBars').innerHTML = pd[window_cPoll].opts.map((o, x) => `
-        <div class="mb-3 text-start">
-            <div class="d-flex justify-content-between mb-1"><span class="fw-bold text-dark">${o}</span><span class="text-dark">${s[x]} Suara</span></div>
-            <div class="progress" style="height: 20px;"><div class="progress-bar ${colors[x]}" style="width: 100%"></div></div>
-        </div>`).join('');
+    let isVoted = localStorage.getItem('voted_poll_' + data.q);
+    
+    document.getElementById('pollOptionsContainer').innerHTML = data.opts.map((opt, i) => {
+        let percentage = totalVotes === 0 ? 0 : Math.round((data.votes[i] / totalVotes) * 100);
+        let fillStyle = isVoted ? `width: ${percentage}%` : `width: 0%`;
+        let pctText = isVoted ? `<span class="float-end fw-bold">${percentage}%</span>` : '';
+        let btnClass = isVoted && isVoted == i ? 'voted' : '';
         
-    setTimeout(() => { window_cPoll++; loadCurrentPoll(); }, 3500);
+        return `
+        <button class="poll-option-btn ${btnClass} w-100" onclick="submitVote(${i}, '${data.q}')" ${isVoted ? 'disabled' : ''}>
+            <div class="poll-progress-fill" style="${fillStyle}"></div>
+            <div class="d-flex justify-content-between position-relative z-index-1">
+                <span>${['A','B','C','D','E'][i]}. ${opt}</span>
+                ${pctText}
+            </div>
+        </button>`;
+    }).join('');
+
+    document.getElementById('reactFire').innerText = data.reactions?.fire || 0;
+    document.getElementById('reactUp').innerText = data.reactions?.thumbsUp || 0;
+    document.getElementById('reactDown').innerText = data.reactions?.thumbsDown || 0;
 }
 
-let kq = 0, kstep = 0;
-const kSoal = [
-    {q: "Jika ada kebijakan rektorat yang merugikan mahasiswa, apa aksi pertama Anda?", o: ["Bikin forum diskusi & kajian tertulis (2)", "Konsolidasi massa & langsung demo aksi (3)", "Biarin saja, fokus kuliah sendiri (1)"]},
-    {q: "Siapa figur tokoh pergerakan nasional yang paling Anda kagumi?", o: ["Munir Said Thalib (3)", "Najwa Shihab (2)", "Tidak punya tokoh idola (1)"]}
-];
+function submitVote(idx, questionKey) {
+    let data = window.globalData.karisma_modern_poll;
+    data.votes[idx] += 1;
+    window.db.ref('karisma_modern_poll').set(data);
+    localStorage.setItem('voted_poll_' + questionKey, idx);
+    tambahPoin(10, 'Berpartisipasi dalam Polling');
+    renderPollingRealtime();
+}
 
-function mulaiKuis() { kq = 0; kstep = 0; renderKuis(); }
-function renderKuis() {
-    const b = document.getElementById('quizContainer');
-    if(!b) return;
-    if(kstep >= kSoal.length) {
-        let hasil = kq >= 5 ? "Tipe: Aktivis Radikal & Kritis 🔥" : "Tipe: Akademisi Pasif & Pengamat 📚";
-        b.innerHTML = `<div class="text-center p-4 bg-light rounded-4 border"><h3 class="fw-bold text-dark">${hasil}</h3><button class="btn btn-dark mt-3 rounded-pill px-4 fw-bold" onclick="mulaiKuis()">Ulangi Tes Kepribadian</button></div>`;
-        return;
+function kirimReaksi(type) {
+    let data = window.globalData.karisma_modern_poll;
+    if(!data.reactions) data.reactions = { fire:0, thumbsUp:0, thumbsDown:0 };
+    data.reactions[type] += 1;
+    window.db.ref('karisma_modern_poll/reactions').set(data.reactions);
+}
+
+// --- 5.2 DAILY CHALLENGE ---
+function renderDailyChallenge() {
+    let todayDate = new Date().toLocaleDateString('id-ID');
+    let defaultDaily = { 
+        date: todayDate, title: "Fungsi Legislatif", q: "Apa fungsi utama DPR selain Legislasi dan Anggaran?", 
+        opts: ["Eksekusi Hukum", "Pengawasan (Control)", "Yudikasi", "Diplomasi Internasional"], ans: 1, 
+        exp: "Pengawasan (Control) adalah fungsi DPR untuk mengawasi jalannya pemerintahan agar sesuai undang-undang." 
+    };
+    let data = window.globalData.karisma_daily || defaultDaily;
+    
+    if(!document.getElementById('dailyQuestionUI')) return;
+    document.getElementById('dailyTitleUI').innerText = data.title;
+    document.getElementById('dailyQuestionUI').innerText = data.q;
+    
+    let isDone = localStorage.getItem('daily_done_' + data.date);
+    
+    if(isDone) {
+        document.getElementById('dailyOptionsContainer').innerHTML = `<p class="text-success bg-white p-3 rounded-3 fw-bold"><i class="fa-solid fa-circle-check me-2"></i>Tantangan hari ini sudah diselesaikan!</p>`;
+        let resBox = document.getElementById('dailyResult');
+        resBox.classList.remove('d-none'); resBox.classList.add('bg-light', 'text-dark-blue');
+        resBox.innerHTML = `<strong>💡 Penjelasan:</strong><br>${data.exp}`;
+    } else {
+        document.getElementById('dailyOptionsContainer').innerHTML = data.opts.map((opt, i) => 
+            `<button class="btn btn-outline-light text-start py-2 px-3 rounded-pill" onclick="jawabDaily(${i})">${opt}</button>`
+        ).join('');
     }
-    b.innerHTML = `
-        <h5 class="fw-bold mb-4 text-center text-dark">${kSoal[kstep].q}</h5>
-        <div class="d-grid gap-2">
-            <button class="btn btn-outline-dark text-start p-3 rounded-3 fw-medium" onclick="kq+=${parseInt(kSoal[kstep].o[0].slice(-2,-1))};kstep++;renderKuis()">${kSoal[kstep].o[0].slice(0,-4)}</button>
-            <button class="btn btn-outline-dark text-start p-3 rounded-3 fw-medium" onclick="kq+=${parseInt(kSoal[kstep].o[1].slice(-2,-1))};kstep++;renderKuis()">${kSoal[kstep].o[1].slice(0,-4)}</button>
-        </div>`;
 }
 
-function toggleDarkMode() { 
-    document.body.classList.toggle('dark-mode'); 
-    document.getElementById('darkModeIcon').className = document.body.classList.contains('dark-mode') ? 'fa-solid fa-sun fs-4 text-warning' : 'fa-solid fa-moon fs-4 text-white'; 
+function jawabDaily(idxSelected) {
+    let data = window.globalData.karisma_daily;
+    localStorage.setItem('daily_done_' + data.date, 'true');
+    
+    let resBox = document.getElementById('dailyResult');
+    resBox.classList.remove('d-none');
+    
+    if(idxSelected === data.ans) {
+        tambahPoin(20, 'Menjawab Challenge dengan Benar!');
+        resBox.classList.add('bg-success', 'text-white');
+        resBox.innerHTML = `<strong>Jawaban Tepat! (+20 Poin)</strong><br>${data.exp}`;
+    } else {
+        resBox.classList.add('bg-danger', 'text-white');
+        resBox.innerHTML = `<strong>Kurang Tepat.</strong><br>Jawaban benar: ${data.opts[data.ans]}<br><br>💡 Penjelasan:<br>${data.exp}`;
+    }
+    document.getElementById('dailyOptionsContainer').style.display = 'none';
 }
 
-function shareTo(platform) { 
-    let u = encodeURIComponent(window.location.href); 
-    let t = encodeURIComponent(`Mari kawal pergerakan mahasiswa melalui website portal KARISMA HIMA Psikologi ULM!`); 
-    if(platform === 'whatsapp') window.open(`https://api.whatsapp.com/send?text=${t}%20${u}`); 
-    if(platform === 'copy') { 
-        navigator.clipboard.writeText(window.location.href); 
-        Swal.fire({title: 'Tautan Berhasil Disalin!', icon: 'success', confirmButtonColor: '#0B192C'}); 
-    } 
-}
+// --- PANGGIL RENDER SAAT REALTIME UPDATE ---
+// (Tambahkan renderPollingRealtime() dan renderDailyChallenge() ke dalam fungsi updateUISecaraRealtime() yang sudah ada di atas)
 
 // ==========================================
 // 6. SENSOR KLIK UNTUK FITUR EDIT LANGSUNG (ADMIN ONLY)
