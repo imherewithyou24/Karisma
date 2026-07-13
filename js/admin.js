@@ -20,12 +20,14 @@ firebase.auth().onAuthStateChanged((user) => {
 
 function loginDenganGoogle() {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(googleProvider)
-    .then((result) => {
-        handleUserLogin(result.user, true);
-    }).catch((error) => {
-        Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
-    });
+    // UBAH: Dari Popup menjadi Redirect agar tidak dicekal oleh Safari iPhone
+    firebase.auth().signInWithRedirect(googleProvider);
+}
+
+// Tangkap hasil setelah iPhone selesai memuat ulang halaman
+firebase.auth().getRedirectResult().catch((error) => {
+    Swal.fire({title: 'Gagal Autentikasi', text: 'Sistem Apple memblokir akses. Silakan coba lagi.', icon: 'error'});
+});
 }
 
 function loginDenganEmail() {
