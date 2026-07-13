@@ -199,132 +199,104 @@
             </div>
         </div>
     </section>
-<!-- INTERAKTIF SECTION UPGRADE (Modern Gamified Dashboard) -->
+<!-- INTERAKTIF SECTION UPGRADE V4 (Pure Firebase Gamification) -->
     <section id="interaktif" class="py-5 bg-light position-relative">
         <div class="container py-5">
             <div class="text-center mb-5">
                 <h2 id="judulInteraktif" class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2 editable-text">RUANG INTERAKTIF MAHASISWA</h2>
-                <p id="subInteraktif" class="text-muted mt-2 editable-text">Suarakan pendapatmu, asah nalar kritis, dan kumpulkan poin pergerakan!</p>
+                <p id="subInteraktif" class="text-muted mt-2 editable-text">Suarakan pendapatmu, asah nalar kritis, dan pantau peringkat keaktifanmu!</p>
             </div>
 
             <div class="row g-4">
-                <!-- KOLOM KIRI: FITUR UTAMA (Poll, Kompas, Daily) -->
+                <!-- KOLOM KIRI: FITUR UTAMA (Live Polling & Tantangan Kritis) -->
                 <div class="col-lg-8 d-flex flex-column gap-4">
                     
-                    <!-- FITUR 1: POLLING MAHASISWA -->
+                    <!-- FITUR 1: LIVE POLLING -->
                     <div class="modern-card p-4 p-md-5 bg-white">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="badge-gami bg-danger-soft text-danger"><i class="fa-solid fa-chart-simple me-1"></i> Live Polling</span>
                             <span class="text-muted small fw-bold" id="pollTotalVotes">0 Suara</span>
                         </div>
-                        <h4 class="fw-bold text-dark-blue mb-4" id="pollQuestionUI">Memuat Isu...</h4>
+                        <h4 class="fw-bold text-dark-blue mb-4" id="pollQuestionUI">Belum ada polling aktif.</h4>
                         
                         <div id="pollOptionsContainer" class="d-flex flex-column gap-3">
-                            <!-- Opsi Polling akan di-render di sini -->
+                            <p class="text-muted">Menunggu admin membuat polling baru...</p>
                         </div>
                         
                         <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-2" id="pollReactionsUI" style="display: none !important;">
                                 <button class="btn btn-reaction" onclick="kirimReaksi('fire')">🔥 <span id="reactFire">0</span></button>
                                 <button class="btn btn-reaction" onclick="kirimReaksi('thumbsUp')">👍 <span id="reactUp">0</span></button>
                                 <button class="btn btn-reaction" onclick="kirimReaksi('thumbsDown')">👎 <span id="reactDown">0</span></button>
                             </div>
-                            <button class="btn btn-sm btn-warning admin-only shadow-sm" onclick="editPollingDewa()"><i class="fa-solid fa-pen me-1"></i> Edit Polling</button>
+                            <button class="btn btn-sm btn-warning admin-only shadow-sm ms-auto" onclick="editPollingDewa()"><i class="fa-solid fa-pen me-1"></i> Edit Polling</button>
                         </div>
                     </div>
 
-                    <!-- FITUR 2: DAILY CHALLENGE -->
+                    <!-- FITUR 2: TANTANGAN KRITIS (DAILY CHALLENGE) -->
                     <div class="modern-card p-4 p-md-5 bg-dark-blue text-white position-relative overflow-hidden">
-                        <!-- Ornamen background -->
                         <i class="fa-solid fa-bolt position-absolute text-white opacity-10" style="font-size: 15rem; top: -20px; right: -30px;"></i>
-                        
                         <div class="position-relative z-index-1">
-                            <span class="badge-gami bg-warning text-dark-blue mb-3"><i class="fa-solid fa-calendar-day me-1"></i> Isu Hari Ini</span>
-                            <h4 class="fw-bold text-warning mb-2" id="dailyTitleUI">Tantangan Kritis</h4>
-                            <p class="fs-5 mb-4 opacity-75" id="dailyQuestionUI">Memuat tantangan hari ini...</p>
+                            <span class="badge-gami bg-warning text-dark-blue mb-3"><i class="fa-solid fa-calendar-day me-1"></i> Tantangan Hari Ini</span>
+                            <h4 class="fw-bold text-warning mb-2" id="dailyTitleUI">Belum ada tantangan</h4>
+                            <p class="fs-5 mb-4 opacity-75" id="dailyQuestionUI">Tantangan harian belum diatur oleh admin.</p>
                             
-                            <div id="dailyOptionsContainer" class="d-flex flex-column gap-2 mb-3">
-                                <!-- Opsi Kuis Daily -->
-                            </div>
-                            
-                            <div id="dailyResult" class="p-3 rounded-3 mt-3 d-none"></div>
+                            <div id="dailyOptionsContainer" class="d-flex flex-column gap-2 mb-3"></div>
+                            <div id="dailyResult" class="p-3 rounded-3 mt-3 d-none shadow-sm" style="transition: all 0.3s ease;"></div>
                             
                             <button class="btn btn-sm btn-light text-dark mt-3 admin-only" onclick="editDailyDewa()"><i class="fa-solid fa-pen me-1"></i> Edit Tantangan</button>
                         </div>
                     </div>
-
-                    <!-- FITUR 3: KOMPAS POLITIK -->
-                    <div class="modern-card p-4 p-md-5 bg-white text-center">
-                        <div class="mb-4">
-                            <div class="d-inline-block p-3 bg-primary-soft rounded-circle mb-3 text-primary fs-1">
-                                <i class="fa-solid fa-compass"></i>
-                            </div>
-                            <h3 class="fw-bold text-dark-blue">Kompas Politik Mahasiswa</h3>
-                            <p class="text-muted">Jawab 10 pertanyaan untuk mengetahui di mana posisi ideologimu dalam pergerakan kampus.</p>
-                        </div>
-                        <div id="kompasContainer">
-                            <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm" onclick="mulaiKompas()">Mulai Analisis</button>
-                        </div>
-                        <button class="btn btn-sm btn-warning admin-only mt-4" onclick="editKompasDewa()"><i class="fa-solid fa-pen me-1"></i> Edit JSON Soal</button>
-                    </div>
-
                 </div>
 
-                <!-- KOLOM KANAN: GAMIFICATION SIDEBAR -->
+                <!-- KOLOM KANAN: GAMIFICATION SIDEBAR (PERSONALIZED) -->
                 <div class="col-lg-4 d-flex flex-column gap-4">
                     
-                    <!-- PROFIL & STATS -->
-                    <div class="modern-card p-4 bg-white text-center">
-                        <div class="avatar-circle mx-auto mb-3" id="userAvatarInitials">M</div>
-                        <h5 class="fw-bold text-dark-blue mb-1" id="userNameGami">Mahasiswa</h5>
-                        <p class="text-muted small mb-3" id="userTitleGami">Pengamat Pemula</p>
-                        
-                        <div class="row g-2 text-center">
-                            <div class="col-6">
-                                <div class="p-2 bg-light rounded-3 border">
-                                    <h5 class="fw-bold text-warning mb-0" id="userPoints">0</h5>
-                                    <small class="text-muted" style="font-size: 11px;">POIN AKTIVIS</small>
+                    <!-- PROFIL PENGGUNA (Otomatis dari Akun Google) -->
+                    <div class="modern-card p-4 bg-white text-center position-relative overflow-hidden">
+                        <!-- Lapisan overlay jika belum login -->
+                        <div id="authOverlay" class="position-absolute top-0 start-0 w-100 h-100 bg-white d-flex flex-column align-items-center justify-content-center z-index-2" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(5px);">
+                            <i class="fa-solid fa-lock text-muted fs-1 mb-3"></i>
+                            <h6 class="fw-bold text-dark-blue">Portal Terkunci</h6>
+                            <p class="small text-muted mb-3 px-3">Login menggunakan email universitas/pribadi untuk merekam poin dan prestasimu.</p>
+                            <button class="btn btn-dark-blue rounded-pill fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#loginModal">Masuk Sistem</button>
+                        </div>
+
+                        <div id="userProfileGami">
+                            <img id="userAvatarImg" src="https://via.placeholder.com/150" class="rounded-circle mx-auto mb-3 border border-3 border-warning shadow-sm" style="width: 70px; height: 70px; object-fit: cover;">
+                            <h5 class="fw-bold text-dark-blue mb-0" id="userNameGami">Nama Pengguna</h5>
+                            <p class="text-muted small mb-3" id="userEmailGami">email@mahasiswa.com</p>
+                            
+                            <div class="row g-2 text-center">
+                                <div class="col-6">
+                                    <div class="p-2 bg-light rounded-3 border">
+                                        <h5 class="fw-bold text-warning mb-0" id="userPoints">0</h5>
+                                        <small class="text-muted fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">POIN AKTIVIS</small>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="p-2 bg-light rounded-3 border">
-                                    <h5 class="fw-bold text-danger mb-0" id="userStreak">0</h5>
-                                    <small class="text-muted" style="font-size: 11px;">HARI STREAK 🔥</small>
+                                <div class="col-6">
+                                    <div class="p-2 bg-light rounded-3 border">
+                                        <h5 class="fw-bold text-danger mb-0" id="userStreak">0</h5>
+                                        <small class="text-muted fw-bold" style="font-size: 10px; letter-spacing: 0.5px;">HARI STREAK 🔥</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- BADGES / PENCAPAIAN -->
+                    <!-- PENCAPAIAN / BADGES INDIVIDUAL -->
                     <div class="modern-card p-4 bg-white">
-                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-medal text-warning me-2"></i>Pencapaian</h6>
+                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-medal text-warning me-2"></i>Pencapaianmu</h6>
                         <div class="d-flex flex-wrap gap-2" id="badgesContainer">
-                            <span class="badge bg-light text-muted border" title="Belum terbuka">Analisa Pertama 🔒</span>
-                            <span class="badge bg-light text-muted border" title="Belum terbuka">Voter Aktif 🔒</span>
+                            <span class="badge bg-light text-muted border w-100 py-2">Belum ada pencapaian.</span>
                         </div>
                     </div>
 
-                    <!-- LEADERBOARD -->
+                    <!-- LEADERBOARD REALTIME -->
                     <div class="modern-card p-4 bg-white">
-                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-trophy text-warning me-2"></i>Top Aktivis Minggu Ini</h6>
+                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-trophy text-warning me-2"></i>Peringkat Aktivis</h6>
                         <div class="d-flex flex-column gap-3" id="leaderboardContainer">
-                            <!-- Data Leaderboard -->
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold text-muted">1</span>
-                                    <div class="bg-primary-soft text-primary rounded-circle text-center fw-bold" style="width: 30px; height: 30px; line-height: 30px;">A</div>
-                                    <span class="fw-medium fs-6">Aldi</span>
-                                </div>
-                                <span class="badge bg-warning text-dark-blue rounded-pill">430 Pts</span>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="fw-bold text-muted">2</span>
-                                    <div class="bg-success-soft text-success rounded-circle text-center fw-bold" style="width: 30px; height: 30px; line-height: 30px;">R</div>
-                                    <span class="fw-medium fs-6">Rina</span>
-                                </div>
-                                <span class="badge bg-warning text-dark-blue rounded-pill">390 Pts</span>
-                            </div>
+                            <p class="text-muted small text-center my-3">Belum ada mahasiswa yang memperoleh poin minggu ini.</p>
                         </div>
                     </div>
 
