@@ -199,68 +199,135 @@
             </div>
         </div>
     </section>
+<!-- INTERAKTIF SECTION UPGRADE (Modern Gamified Dashboard) -->
+    <section id="interaktif" class="py-5 bg-light position-relative">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <h2 id="judulInteraktif" class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2 editable-text">RUANG INTERAKTIF MAHASISWA</h2>
+                <p id="subInteraktif" class="text-muted mt-2 editable-text">Suarakan pendapatmu, asah nalar kritis, dan kumpulkan poin pergerakan!</p>
+            </div>
 
-    <section id="interaktif" class="py-5 bg-light">
-        <div class="container py-4">
-            <div class="row justify-content-center">
-                <div class="col-md-9">
-                    <div id="interactiveCarousel" class="carousel slide p-3" data-bs-ride="false">
-                      <div class="carousel-inner shadow-lg rounded-4 p-5 bg-white border">
+            <div class="row g-4">
+                <!-- KOLOM KIRI: FITUR UTAMA (Poll, Kompas, Daily) -->
+                <div class="col-lg-8 d-flex flex-column gap-4">
+                    
+                    <!-- FITUR 1: POLLING MAHASISWA -->
+                    <div class="modern-card p-4 p-md-5 bg-white">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge-gami bg-danger-soft text-danger"><i class="fa-solid fa-chart-simple me-1"></i> Live Polling</span>
+                            <span class="text-muted small fw-bold" id="pollTotalVotes">0 Suara</span>
+                        </div>
+                        <h4 class="fw-bold text-dark-blue mb-4" id="pollQuestionUI">Memuat Isu...</h4>
                         
-                        <div class="carousel-item active">
-                            <span class="badge bg-danger mb-3" id="pollProgressTxt">Isu 1 dari 3</span>
-                            <h3 id="judulPoling" class="fw-bold text-dark-blue text-center mb-2 editable-text"><i class="fa-solid fa-scale-balanced text-warning me-2"></i>Polling Suara Mahasiswa</h3>
-                            <p class="fs-5 text-center text-muted mb-4" id="pollQuestion">Penilaian Anda terhadap draf RUU Penyiaran?</p>
-                            
-                            <div class="d-grid gap-3" id="pollOptionsBox">
-                                <button class="btn btn-outline-dark text-start fw-bold py-3 px-4 rounded-3" onclick="jawabPoll(0)">A. Menolak Keras</button>
-                                <button class="btn btn-outline-dark text-start fw-bold py-3 px-4 rounded-3" onclick="jawabPoll(1)">B. Perlu dikaji ulang</button>
-                                <button class="btn btn-outline-dark text-start fw-bold py-3 px-4 rounded-3" onclick="jawabPoll(2)">C. Mendukung</button>
-                            </div>
-                            
-                            <div id="pollResultsBox" class="mt-4" style="display: none;">
-                                <h5 class="fw-bold text-center mb-4">Hasil Polling Sementara</h5>
-                                <div id="pollBars"></div>
-                                <button class="btn btn-success btn-sm mt-3 mx-auto admin-only d-block" onclick="exportDataCSV('Polling')"><i class="fa-solid fa-file-excel me-1"></i> Unduh Data Excel</button>
-                            </div>
-                            <button class="btn btn-sm btn-warning admin-only d-block mx-auto mt-4" onclick="editDataInteraktif('poll')"><i class="fa-solid fa-pen"></i> Edit Teks Polling</button>
-                        </div>
-
-                        <div class="carousel-item">
-                            <h3 id="judulKuis" class="fw-bold text-primary text-center mb-2 editable-text"><i class="fa-solid fa-brain text-warning me-2"></i>Kompas Politik Mahasiswa</h3>
-                            <p id="subKuis" class="fs-6 text-center text-muted mb-4 editable-text">Cari tahu kecenderungan kepribadian pergerakanmu di kampus!</p>
-                            <div id="quizContainer">
-                                <div class="text-center mt-5 mb-4"><button class="btn btn-primary btn-lg bg-dark-blue rounded-pill px-5 fw-bold" onclick="mulaiKuis()">Mulai Tes (8 Soal)</button></div>
-                            </div>
-                            <button class="btn btn-sm btn-warning admin-only d-block mx-auto mt-4" onclick="editDataInteraktif('kuis')"><i class="fa-solid fa-pen"></i> Edit Soal Kuis (JSON)</button>
-                        </div>
-
-                        <div class="carousel-item">
-                            <h3 id="judulTeka" class="fw-bold text-success text-center mb-2 editable-text"><i class="fa-solid fa-puzzle-piece text-warning me-2"></i>Teka-Teki Pergerakan</h3>
-                            <p id="tekaTekiSoal" class="fs-4 text-center text-dark-blue mb-4 fw-bold mt-4 editable-text">"Aku sering diucapkan saat aksi, tapi jarang diwujudkan oleh politisi. Apakah aku?"</p>
-                            <div class="text-center mt-4">
-                                <input type="text" id="jawabanTekaTeki" class="form-control form-control-lg text-center mx-auto mb-3" style="max-width: 300px;" placeholder="Tebak di sini...">
-                                <button class="btn btn-success btn-lg rounded-pill px-5 fw-bold" onclick="cekTekaTeki()">Kunci Jawaban</button>
-                            </div>
-                            <button class="btn btn-sm btn-warning admin-only d-block mx-auto mt-5" onclick="editDataInteraktif('tekateki')"><i class="fa-solid fa-pen"></i> Edit Soal & Kunci Jawaban</button>
-                        </div>
-
-                        <div class="carousel-item">
-                            <h3 id="judulGacha" class="fw-bold text-danger text-center mb-2 editable-text"><i class="fa-solid fa-dharmachakra text-warning me-2"></i>Spinner Nasihat Pergerakan</h3>
-                            <p id="subGacha" class="fs-6 text-center text-muted mb-2 editable-text">Lelah ngoding dan kajian? Putar roda nasibmu hari ini!</p>
-                            <div class="mx-auto mt-4" style="width: 260px; height: 260px; position: relative;">
-                                <div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #dc3545; z-index: 10; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.3));"></div>
-                                <div id="gachaWheel" class="gacha-wheel"></div>
-                                <button onclick="putarGacha()" class="btn btn-light position-absolute top-50 start-50 translate-middle shadow-lg text-dark-blue gacha-btn" style="width: 80px; height: 80px; border-radius: 50%; font-weight: bold; font-size:1.1rem; border: 4px solid #FFC107; z-index: 5;">PUTAR!</button>
-                            </div>
-                            <div class="text-center mt-4" style="min-height: 50px;"><h5 id="gachaResult" class="fw-bold text-dark-blue mb-0">Klik tombol Putar!</h5></div>
-                            <button class="btn btn-sm btn-warning admin-only d-block mx-auto mt-4" onclick="editDataInteraktif('gacha')"><i class="fa-solid fa-pen"></i> Edit Daftar Nasihat Gacha</button>
+                        <div id="pollOptionsContainer" class="d-flex flex-column gap-3">
+                            <!-- Opsi Polling akan di-render di sini -->
                         </div>
                         
-                      </div>
-                      <button class="carousel-control-prev" type="button" data-bs-target="#interactiveCarousel" data-bs-slide="prev" style="width: 5%; left: -60px;"><span class="carousel-control-prev-icon bg-dark rounded-circle p-3"></span></button>
-                      <button class="carousel-control-next" type="button" data-bs-target="#interactiveCarousel" data-bs-slide="next" style="width: 5%; right: -60px;"><span class="carousel-control-next-icon bg-dark rounded-circle p-3"></span></button>
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-reaction" onclick="kirimReaksi('fire')">🔥 <span id="reactFire">0</span></button>
+                                <button class="btn btn-reaction" onclick="kirimReaksi('thumbsUp')">👍 <span id="reactUp">0</span></button>
+                                <button class="btn btn-reaction" onclick="kirimReaksi('thumbsDown')">👎 <span id="reactDown">0</span></button>
+                            </div>
+                            <button class="btn btn-sm btn-warning admin-only shadow-sm" onclick="editPollingDewa()"><i class="fa-solid fa-pen me-1"></i> Edit Polling</button>
+                        </div>
                     </div>
+
+                    <!-- FITUR 2: DAILY CHALLENGE -->
+                    <div class="modern-card p-4 p-md-5 bg-dark-blue text-white position-relative overflow-hidden">
+                        <!-- Ornamen background -->
+                        <i class="fa-solid fa-bolt position-absolute text-white opacity-10" style="font-size: 15rem; top: -20px; right: -30px;"></i>
+                        
+                        <div class="position-relative z-index-1">
+                            <span class="badge-gami bg-warning text-dark-blue mb-3"><i class="fa-solid fa-calendar-day me-1"></i> Isu Hari Ini</span>
+                            <h4 class="fw-bold text-warning mb-2" id="dailyTitleUI">Tantangan Kritis</h4>
+                            <p class="fs-5 mb-4 opacity-75" id="dailyQuestionUI">Memuat tantangan hari ini...</p>
+                            
+                            <div id="dailyOptionsContainer" class="d-flex flex-column gap-2 mb-3">
+                                <!-- Opsi Kuis Daily -->
+                            </div>
+                            
+                            <div id="dailyResult" class="p-3 rounded-3 mt-3 d-none"></div>
+                            
+                            <button class="btn btn-sm btn-light text-dark mt-3 admin-only" onclick="editDailyDewa()"><i class="fa-solid fa-pen me-1"></i> Edit Tantangan</button>
+                        </div>
+                    </div>
+
+                    <!-- FITUR 3: KOMPAS POLITIK -->
+                    <div class="modern-card p-4 p-md-5 bg-white text-center">
+                        <div class="mb-4">
+                            <div class="d-inline-block p-3 bg-primary-soft rounded-circle mb-3 text-primary fs-1">
+                                <i class="fa-solid fa-compass"></i>
+                            </div>
+                            <h3 class="fw-bold text-dark-blue">Kompas Politik Mahasiswa</h3>
+                            <p class="text-muted">Jawab 10 pertanyaan untuk mengetahui di mana posisi ideologimu dalam pergerakan kampus.</p>
+                        </div>
+                        <div id="kompasContainer">
+                            <button class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm" onclick="mulaiKompas()">Mulai Analisis</button>
+                        </div>
+                        <button class="btn btn-sm btn-warning admin-only mt-4" onclick="editKompasDewa()"><i class="fa-solid fa-pen me-1"></i> Edit JSON Soal</button>
+                    </div>
+
+                </div>
+
+                <!-- KOLOM KANAN: GAMIFICATION SIDEBAR -->
+                <div class="col-lg-4 d-flex flex-column gap-4">
+                    
+                    <!-- PROFIL & STATS -->
+                    <div class="modern-card p-4 bg-white text-center">
+                        <div class="avatar-circle mx-auto mb-3" id="userAvatarInitials">M</div>
+                        <h5 class="fw-bold text-dark-blue mb-1" id="userNameGami">Mahasiswa</h5>
+                        <p class="text-muted small mb-3" id="userTitleGami">Pengamat Pemula</p>
+                        
+                        <div class="row g-2 text-center">
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3 border">
+                                    <h5 class="fw-bold text-warning mb-0" id="userPoints">0</h5>
+                                    <small class="text-muted" style="font-size: 11px;">POIN AKTIVIS</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 bg-light rounded-3 border">
+                                    <h5 class="fw-bold text-danger mb-0" id="userStreak">0</h5>
+                                    <small class="text-muted" style="font-size: 11px;">HARI STREAK 🔥</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BADGES / PENCAPAIAN -->
+                    <div class="modern-card p-4 bg-white">
+                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-medal text-warning me-2"></i>Pencapaian</h6>
+                        <div class="d-flex flex-wrap gap-2" id="badgesContainer">
+                            <span class="badge bg-light text-muted border" title="Belum terbuka">Analisa Pertama 🔒</span>
+                            <span class="badge bg-light text-muted border" title="Belum terbuka">Voter Aktif 🔒</span>
+                        </div>
+                    </div>
+
+                    <!-- LEADERBOARD -->
+                    <div class="modern-card p-4 bg-white">
+                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-trophy text-warning me-2"></i>Top Aktivis Minggu Ini</h6>
+                        <div class="d-flex flex-column gap-3" id="leaderboardContainer">
+                            <!-- Data Leaderboard -->
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted">1</span>
+                                    <div class="bg-primary-soft text-primary rounded-circle text-center fw-bold" style="width: 30px; height: 30px; line-height: 30px;">A</div>
+                                    <span class="fw-medium fs-6">Aldi</span>
+                                </div>
+                                <span class="badge bg-warning text-dark-blue rounded-pill">430 Pts</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-muted">2</span>
+                                    <div class="bg-success-soft text-success rounded-circle text-center fw-bold" style="width: 30px; height: 30px; line-height: 30px;">R</div>
+                                    <span class="fw-medium fs-6">Rina</span>
+                                </div>
+                                <span class="badge bg-warning text-dark-blue rounded-pill">390 Pts</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
