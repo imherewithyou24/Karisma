@@ -112,3 +112,75 @@ body.admin-mode .editable-text:hover {
     background-color: rgba(255, 193, 7, 0.1);
     padding: 2px 8px;
 }
+/* ========================================= */
+/* MODERN REPOSITORY CARD LIST (PDF DASHBOARD) */
+/* ========================================= */
+.doc-card {
+    background-color: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 16px;
+    padding: 20px 24px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    animation: slideUpFadeIn 0.4s ease forwards;
+}
+.doc-card:hover {
+    background-color: #FFF9F5;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(232, 92, 13, 0.08);
+    border-color: rgba(232, 92, 13, 0.3);
+}
+
+/* Modern Badges (Pill) */
+.badge-modern {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.3px;
+    display: inline-block;
+}
+.badge-kajian { background-color: #FFF1D6; color: #C77D00; }
+.badge-policy { background-color: #E3F2FD; color: #1565C0; }
+.badge-riset { background-color: #E8F5E9; color: #2E7D32; }
+.badge-artikel { background-color: #F3E5F5; color: #7B1FA2; }
+.badge-default { background-color: #F5F5F5; color: #616161; }
+
+/* Modern Buttons */
+.btn-download {
+    background-color: #0B192C;
+    color: #fff;
+    border-radius: 999px;
+    padding: 8px 24px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border: none;
+    box-shadow: 0 4px 10px rgba(11, 25, 44, 0.15);
+}
+.btn-download:hover {
+    background-color: #FFC107;
+    color: #0B192C;
+    transform: scale(1.05);
+}
+
+.btn-delete-modern {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: transparent;
+    color: #dc3545;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+.btn-delete-modern:hover {
+    background-color: #FFEbee;
+    color: #b71c1c;
+}
+
+@keyframes slideUpFadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
