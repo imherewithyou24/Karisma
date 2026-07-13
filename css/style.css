@@ -59,3 +59,40 @@ body.dark-mode { background-color: #121212; color: #e0e0e0; }
 .status-selesai { border-left-color: #198754; }
 .status-proses { border-left-color: #ffc107; }
 .status-mandek { border-left-color: #dc3545; }
+/* ========================================= */
+/* FIX BUG: TIMELINE AGENDA PERGERAKAN       */
+/* ========================================= */
+.timeline {
+    border-left: 4px solid #FFC107;
+    padding-left: 25px;
+    margin-left: 15px;
+    position: relative;
+}
+.timeline-item {
+    margin-bottom: 30px;
+    position: relative;
+}
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    background-color: #0B192C;
+    border: 4px solid #FFC107;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+/* ========================================= */
+/* UPGRADE: TABEL PERPUSTAKAAN KAJIAN        */
+/* ========================================= */
+#pdfContainer tr td {
+    padding: 15px 10px;
+    vertical-align: middle;
+}
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa !important;
+    transition: 0.3s;
+}
