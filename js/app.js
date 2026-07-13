@@ -174,16 +174,16 @@ function renderAgenda(){
 }
 
 function renderRepositori(){ 
-    let dRepo = [{ j:"Kajian Kebijakan UKT Nominal 2026", k:"Internal Kampus", t:"Mar 26", l:"#" }];
+    let dRepo = [{ j:"Tata Tertib MABA 2026", k:"Kajian Kastrat", t:"Agustus 17 2026", l:"#" }];
     let d = window.globalData.karisma_repo || dRepo; 
     if(document.getElementById('pdfContainer')) {
         document.getElementById('pdfContainer').innerHTML = d.map((x, i) => `
             <tr>
-                <td class="text-dark"><b>${x.j}</b></td>
-                <td><span class="badge bg-secondary">${x.k}</span></td>
-                <td>
-                    <a href="${x.l}" target="_blank" class="btn btn-sm btn-primary fw-bold px-3 rounded-pill">Unduh</a> 
-                    <button class="btn btn-sm btn-danger admin-only ms-1" style="display:none;" onclick="hapusRepo(${i})"><i class="fa-solid fa-trash"></i></button>
+                <td class="text-dark fw-bold">${x.j}</td>
+                <td class="text-center"><span class="badge bg-secondary">${x.k || 'Kajian'}</span></td>
+                <td class="text-center">
+                    <a href="${x.l}" target="_blank" class="btn btn-sm btn-primary fw-bold rounded-pill px-3 shadow-sm"><i class="fa-solid fa-download me-1"></i> Unduh</a> 
+                    <button class="btn btn-sm btn-danger admin-only ms-1 shadow-sm" style="display:none;" onclick="hapusRepo(${i})"><i class="fa-solid fa-trash"></i></button>
                 </td>
             </tr>`).join(''); 
     }
