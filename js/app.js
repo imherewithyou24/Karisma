@@ -7,17 +7,18 @@ window.db.ref().on('value', (snapshot) => {
 });
 
 function updateUISecaraRealtime() {
-    // Render komponen teks dan FONT dinamis dari cloud
-    const textIds = ['teksBannerUtama', 'teksBannerSub', 'teksKutipan', 'teksProfilDetail', 'teksTtd1', 'teksTtd2', 'teksMarquee', 'tekaTekiSoal'];
-    textIds.forEach(id => {
-        if(document.getElementById(id)) {
-            // Pasang Teksnya
-            if(window.globalData[id] !== undefined) document.getElementById(id).innerText = window.globalData[id]; 
-            // Pasang Gaya Font-nya
-            if(window.globalData['font_' + id]) {
-                document.getElementById(id).style.fontFamily = window.globalData['font_' + id];
+    // 🌟 SMART DETECTION: Otomatis mencari semua teks yang punya class "editable-text" dari atas sampai bawah web
+    document.querySelectorAll('.editable-text').forEach(el => {
+        if(el.id) {
+            // Pasang teks dari Cloud jika ada datanya
+            if(window.globalData[el.id] !== undefined) {
+                el.innerText = window.globalData[el.id]; 
+            }
+            // Pasang gaya Font dari Cloud jika ada datanya
+            if(window.globalData['font_' + el.id]) {
+                el.style.fontFamily = window.globalData['font_' + el.id];
             } else {
-                document.getElementById(id).style.fontFamily = ""; // Reset jika kembali ke bawaan
+                el.style.fontFamily = ""; // Reset ke font bawaan tema jika kosong
             }
         }
     });
@@ -101,7 +102,6 @@ function cariBerita() {
     let dbNews = window.globalData.karisma_news || [];
     if(kw === '') { 
         const hr = new Date().getHours(); 
-        // Ambil porsi indeks berita secara dinamis agar terlihat berotasi berkala
         let startIdx = (hr * 3) % Math.max(1, dbNews.length);
         renderBeritaList(dbNews.slice(startIdx, startIdx + 3)); 
     } else { 
@@ -298,12 +298,9 @@ document.addEventListener('click', function(e) {
         if(targetEl && targetEl.id) {
             e.preventDefault(); // Mencegah pindah halaman jika teks berupa link
             
-            // Tentukan label pop-up berdasarkan ID teksnya
-            let label = "Blok Teks";
-            if(targetEl.id === 'teksBannerUtama') label = "Judul Utama";
-            else if(targetEl.id === 'teksBannerSub') label = "Sub Judul";
-            else if(targetEl.id === 'teksKutipan') label = "Kutipan Profil";
-            else if(targetEl.id === 'teksProfilDetail') label = "Paragraf Profil";
+            // Ambil sedikit potongan teks aslinya untuk dijadikan judul pop-up
+            let labelText = targetEl.innerText.trim();
+            let label = labelText.length > 20 ? labelText.substring(0, 20) + "..." : labelText;
             
             if(typeof editTeks === 'function') {
                 editTeks(targetEl.id, label);
