@@ -333,3 +333,76 @@ async function ubahLink(t) {
 function exportDataCSV(tipe) {
     Swal.fire({title: 'Ekstraksi Arsip', text: `Berhasil menarik laporan data mentah ${tipe} langsung dari server Singapore!`, icon: 'success'});
 }
+// ==========================================
+// FITUR ADMIN: EDIT GAMIFICATION (POLL & DAILY)
+// ==========================================
+
+async function editPollingDewa() {
+    const defaultData = window.globalData.karisma_modern_poll || {q:"", opts:["","",""]};
+    const { value: f } = await Swal.fire({ 
+        title: 'Manajemen Live Polling', 
+        html: `
+            <input id="pQ" class="swal2-input" placeholder="Pertanyaan Polling" value="${defaultData.q}">
+            <input id="pO1" class="swal2-input" placeholder="Opsi 1" value="${defaultData.opts[0] || ''}">
+            <input id="pO2" class="swal2-input" placeholder="Opsi 2" value="${defaultData.opts[1] || ''}">
+            <input id="pO3" class="swal2-input" placeholder="Opsi 3 (Opsional)" value="${defaultData.opts[2] || ''}">
+            <div class="text-danger mt-2 small">Menyimpan ini akan me-reset seluruh jumlah suara menjadi 0.</div>`, 
+        preConfirm: () => { 
+            let opts = [document.getElementById('pO1').value, document.getElementById('pO2').value];
+            if(document.getElementById('pO3').value) opts.push(document.getElementById('pO3').value);
+            return { q: document.getElementById('pQ').value, opts: opts } 
+        } 
+    });
+    
+    if (f && f.q) {
+        let newData = {
+            q: f.q,
+            opts: f.opts,
+            votes: new Array(f.opts.length).fill(0),
+            reactions: { fire: 0, thumbsUp: 0, thumbsDown: 0 }
+        };
+        await window.db.ref('karisma_modern_poll').set(newData); 
+        Swal.fire({title: 'Polling Diperbarui!', text: 'Sistem dan suara berhasil di-reset.', icon: 'success'});
+    }
+}
+
+async function editDailyDewa() {
+    const today = new Date().toLocaleDateString('id-ID');
+    const { value: f } = await Swal.fire({ 
+        title: 'Tantangan Hari Ini', 
+        html: `
+            <input id="dQ" class="swal2-input" placeholder="Pertanyaan Tantangan">
+            <input id="dO1" class="swal2-input" placeholder="Jawaban A (Benar)">
+            <input id="dO2" class="swal2-input" placeholder="Jawaban B (Salah)">
+            <input id="dO3" class="swal2-input" placeholder="Jawaban C (Salah)">
+            <textarea id="dExp" class="swal2-textarea" placeholder="Penjelasan jawaban untuk mengedukasi mahasiswa..."></textarea>`, 
+        preConfirm: () => { 
+            return { 
+                q: document.getElementById('dQ').value, 
+                opts: [document.getElementById('dO1').value, document.getElementById('dO2').value, document.getElementById('dO3').value],
+                exp: document.getElementById('dExp').value
+            } 
+        } 
+    });
+    
+    if (f && f.q) {
+        // Acak urutan jawaban secara otomatis agar yang benar (index 0) tidak selalu di pilihan A
+        let optsAcak = [...f.opts].sort(() => Math.random() - 0.5);
+        let indexBenar = optsAcak.indexOf(f.opts[0]); // Cari di mana jawaban benarnya bersembunyi
+
+        let newData = {
+            date: today,
+            title: "Tantangan Kritis",
+            q: f.q,
+            opts: optsAcak,
+            ans: indexBenar,
+            exp: f.exp
+        };
+        await window.db.ref('karisma_daily').set(newData); 
+        Swal.fire({title: 'Tantangan Mengudara!', text: 'Mahasiswa kini bisa menjawab tantangan baru Anda.', icon: 'success'});
+    }
+}
+
+function mulaiKompas() {
+    Swal.fire('Kompas Politik', 'Fitur Analisis Persona sedang dalam sinkronisasi data dengan sistem psikologi. Segera hadir!', 'info');
+}
