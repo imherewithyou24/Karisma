@@ -18,7 +18,8 @@ function loginDenganGoogle() {
     firebase.auth().signInWithPopup(googleProvider)
     .then((result) => {
         const user = result.user;
-        cekHakAkses(user.email, user.displayName);
+        // Lempar data nama, email, dan foto profil Google ke mesin pengecek
+        cekHakAkses(user.email, user.displayName, user.photoURL);
     })
     .catch((error) => {
         Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
@@ -38,19 +39,22 @@ function loginDenganEmail() {
     firebase.auth().signInWithEmailAndPassword(email, pass)
     .then((userCredential) => {
         const user = userCredential.user;
-        cekHakAkses(user.email, user.displayName || "Admin");
+        cekHakAkses(user.email, user.displayName || "Admin", null);
     })
     .catch((error) => {
         Swal.fire({title: 'Akses Ditolak', text: 'Email atau password salah / belum terdaftar.', icon: 'error'});
     });
 }
 
-// FUNGSI 3: PENGECEKAN HAK AKSES KETAT (ADMIN VS GUEST)
-function cekHakAkses(emailPengguna, namaPengguna) {
-    // Reset status visibilitas elemen
+// FUNGSI 3: PENGECEKAN HAK AKSES KETAT & REGISTRASI OTOMATIS
+function cekHakAkses(emailPengguna, namaPengguna, fotoProfil = null) {
+    // 1. Reset status visibilitas elemen Edit
     document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'none', 'important'));
 
-    // Cek apakah email yang login ADA di dalam daftar rahasia
+    // 2. Bersihkan karakter aneh di email untuk dijadikan ID unik di Database
+    let userId = emailPengguna.replace(/[^a-zA-Z0-9]/g, ''); 
+
+    // 3. Cek apakah email yang login ADA di dalam daftar rahasia panitia
     if (DAFTAR_ADMIN_KASTRAT.includes(emailPengguna)) {
         // JIKA DIA ADALAH ADMIN KASTRAT
         window.role = 'mod'; 
@@ -64,20 +68,34 @@ function cekHakAkses(emailPengguna, namaPengguna) {
         document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
         
     } else {
-        // JIKA DIA BUKAN ADMIN (MAHASISWA BIASA) - Walaupun passwordnya benar
+        // JIKA DIA BUKAN ADMIN (MAHASISWA UMUM / PENGUNJUNG)
         window.role = 'guest'; 
         document.getElementById('mainBody').classList.remove('admin-mode');
         
-        Swal.fire({ icon: 'info', title: 'Akses Publik Berhasil', text: `Akses Mode Dewa ditolak. Anda masuk sebagai Pembaca.`, timer: 3000, showConfirmButton: false });
+        // Simpan/Daftarkan profil mahasiswa ini ke Database Firebase!
+        window.db.ref('karisma_users/' + userId).set({
+            nama: namaPengguna || 'Mahasiswa',
+            email: emailPengguna,
+            foto: fotoProfil || '',
+            login_terakhir: new Date().toLocaleString('id-ID'),
+            role: 'pengunjung'
+        });
         
-        // Ambil nama depan saja untuk di navbar
+        Swal.fire({ icon: 'info', title: 'Registrasi Berhasil', text: `Halo ${namaPengguna || 'Rekan'}, Anda terdaftar sebagai Pengunjung. Akses edit ditolak.`, timer: 3000, showConfirmButton: false });
+        
+        // Ubah tombol Portal menjadi Nama & Foto Profil Google mahasiswa tersebut
         let namaDepan = namaPengguna ? namaPengguna.split(' ')[0] : 'Mahasiswa';
-        document.getElementById('loginBtnText').innerHTML = `<i class="fa-regular fa-circle-user me-1"></i> ${namaDepan}`;
+        let imgTag = fotoProfil ? `<img src="${fotoProfil}" class="rounded-circle me-1" width="22" height="22" style="object-fit:cover;">` : `<i class="fa-regular fa-circle-user me-1"></i>`;
+        
+        document.getElementById('loginBtnText').innerHTML = `${imgTag} ${namaDepan}`;
         document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-success');
     }
     
-    // Refresh UI
+    // Refresh UI dan Poin Gamifikasi (jika ada)
     if(typeof updateUISecaraRealtime === "function") updateUISecaraRealtime(); 
+    if(typeof initGamification === "function") initGamification();
+    
+    // Tutup pop-up login
     bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
 }
 
