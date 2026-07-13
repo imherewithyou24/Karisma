@@ -286,15 +286,21 @@ function hapusAgenda(i){ let d = window.globalData.karisma_agenda; d.splice(i, 1
 
 async function tambahDokumen(){ 
     const {value: f} = await Swal.fire({
-        title: 'Unggah Dokumen PDF',
+        title: 'Unggah Naskah PDF',
         html: '<input id="r1" class="swal2-input" placeholder="Judul Dokumen Naskah">' +
-              '<input id="rKategori" class="swal2-input" placeholder="Kategori (Bebas: Policy Brief/Kajian/dll)">' +
+              '<select id="rKategori" class="swal2-select"><option value="Kajian Kastrat">Kajian Kastrat</option><option value="Policy Brief">Policy Brief</option><option value="Riset">Riset</option><option value="Artikel">Artikel</option></select>' +
               '<input id="r2" class="swal2-input" placeholder="Link Google Drive PDF Resmi">', 
         preConfirm: () => [document.getElementById('r1').value, document.getElementById('r2').value, document.getElementById('rKategori').value]
     }); 
     if(f && f[0]){ 
         let d = window.globalData.karisma_repo || []; 
-        d.unshift({j: f[0], k: f[2] || "Kajian Kastrat", t: "Baru", l: f[1]}); 
+        
+        // Buat format tanggal otomatis ala Indonesia
+        const today = new Date();
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        const formattedDate = today.toLocaleDateString('id-ID', options);
+
+        d.unshift({j: f[0], k: f[2], t: formattedDate, l: f[1]}); 
         window.db.ref('karisma_repo').set(d);
         Swal.fire({title: 'Dokumen Mengudara!', icon: 'success'});
     } 
