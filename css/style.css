@@ -259,3 +259,21 @@ body.admin-mode .editable-text:hover {
     align-items: center; justify-content: center;
     font-size: 1.5rem; font-weight: bold;
 }
+/* ========================================= */
+/* FIX BUG SAFARI IOS - BACKGROUND HILANG    */
+/* ========================================= */
+@supports (-webkit-touch-callout: none) {
+    #heroSection, .bg-cover {
+        background-attachment: scroll !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #heroSection {
+        background-attachment: scroll !important;
+    }
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
