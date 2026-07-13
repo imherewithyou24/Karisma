@@ -18,26 +18,24 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
     <link rel="stylesheet" href="css/style.css">
-    <style>
+   <style>
         html { scroll-behavior: smooth; }
         
         /* FONT GLOBAL */
         body { font-family: 'Poppins', sans-serif !important; }
         h1, h2, h3, h4, h5, h6, .navbar-brand { font-family: 'Montserrat', sans-serif !important; font-weight: 700; }
 
-        /* ANTI-LAG IPHONE: Paksa GPU bekerja dengan translate3d */
+        /* ANTI-LAG & ANTI-POTONG KHUSUS IPHONE */
         .marquee-container {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
-            box-sizing: border-box;
+            position: relative;
         }
         .marquee-content {
             display: inline-block;
-            padding-left: 100%;
-            animation: jalan-mulus 35s linear infinite; /* Diperlambat agar bisa dibaca */
-            -webkit-transform: translateZ(0);
-            transform: translate3d(0, 0, 0);
+            padding-left: 100vw; /* Pastikan teks dimulai dari ujung paling kanan layar */
+            animation: jalan-mulus 20s linear infinite; /* Kecepatan pas untuk dibaca */
             will-change: transform;
         }
         @keyframes jalan-mulus {
