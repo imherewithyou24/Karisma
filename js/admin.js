@@ -22,19 +22,14 @@ firebase.auth().getRedirectResult().then((result) => {
 }).catch((error) => { console.error("Redirect Error:", error); });
 
 function loginDenganGoogle() {
-    // Tampilkan loading agar user tidak ngeklik 2 kali (mencegah error Conflicting Popup)
-    Swal.fire({ title: 'Memproses...', text: 'Membuka gerbang otorisasi Google', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-
+    // KITA HAPUS LOADING-NYA AGAR TIDAK DIBLOKIR OLEH SISTEM KEAMANAN HP
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     
-    // Coba pakai Popup dulu (Normal untuk Laptop & Android)
     firebase.auth().signInWithPopup(googleProvider)
     .then((result) => {
-        Swal.close();
         handleUserLogin(result.user, true);
     }).catch((error) => {
-        Swal.close();
-        // Jika Safari iPhone memblokir Popup, otomatis ganti jalur pakai Redirect!
+        // Jika Safari/Chrome di HP masih memblokir pop-up, kita otomatis gunakan jalur Redirect (pindah halaman)
         if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
             firebase.auth().signInWithRedirect(googleProvider);
         } else {
