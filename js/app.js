@@ -7,23 +7,23 @@ window.db.ref().on('value', (snapshot) => {
 });
 
 function updateUISecaraRealtime() {
-    // 🌟 SMART DETECTION: Otomatis mencari semua teks yang punya class "editable-text" dari atas sampai bawah web
+    // 1. SMART DETECTION: Otomatis mencari semua teks yang punya class "editable-text"
     document.querySelectorAll('.editable-text').forEach(el => {
         if(el.id) {
-            // Pasang teks dari Cloud jika ada datanya
+            // Pasang teks dari Cloud jika ada
             if(window.globalData[el.id] !== undefined) {
                 el.innerText = window.globalData[el.id]; 
             }
-            // Pasang gaya Font dari Cloud jika ada datanya
+            // Pasang gaya Font dari Cloud jika ada
             if(window.globalData['font_' + el.id]) {
                 el.style.fontFamily = window.globalData['font_' + el.id];
             } else {
-                el.style.fontFamily = ""; // Reset ke font bawaan tema jika kosong
+                el.style.fontFamily = ""; // Reset ke font bawaan tema
             }
         }
     });
 
-    // Render komponen gambar/logo dari cloud
+    // 2. Render komponen gambar/logo dari cloud
     const imgIds = ['heroBg', 'logo1', 'logo2', 'logo3'];
     imgIds.forEach(id => {
         if(window.globalData[id]) {
@@ -35,20 +35,24 @@ function updateUISecaraRealtime() {
         }
     });
 
-    // Sinkronisasi warna tema dewa kustom
+    // 3. Sinkronisasi warna tema
     if(window.globalData.karisma_theme) {
         document.documentElement.style.setProperty('--dark-blue', window.globalData.karisma_theme);
     }
     
-    // Panggil fungsi render untuk modul-modul dinamis
+    // 4. RENDER ULANG MODUL DASAR
     renderTracker();
     renderAgenda();
     renderRepositori();
-    loadCurrentPoll();
     if(document.getElementById('searchInput')) cariBerita(); 
     if(window.activeNewsId) renderKomentar(window.activeNewsId); 
     
-    // Tampilkan statistik data realtime di dashboard
+    // 5. 🔥 INI YANG KRUSIAL: Render Modul Gamifikasi Baru
+    renderPollingRealtime();
+    renderDailyChallenge();
+    renderLeaderboard();
+    
+    // 6. Update statistik dashboard Admin
     let inboxD = window.globalData.karisma_inbox || [];
     if(document.getElementById('statInbox')) document.getElementById('statInbox').innerText = inboxD.length;
     if(window.globalData.karisma_visitors && document.getElementById('statVisitor')) {
@@ -262,85 +266,90 @@ window.filterRepositori = function() {
 };
 
 // ==========================================
-// 5. ENGINE GAMIFICATION & INTERAKTIF (NEW)
+// 5. ENGINE GAMIFICATION PURE FIREBASE REALTIME
 // ==========================================
 
-// --- SISTEM USER (POIN & STREAK LOKAL) ---
-function initGamification() {
-    let userStats = JSON.parse(localStorage.getItem('karisma_user_stats')) || { points: 0, streak: 0, lastLogin: null, badges: [] };
-    const today = new Date().toLocaleDateString('id-ID');
+function renderPersonalDashboard(userData) {
+    if(!document.getElementById('userNameGami')) return;
+    document.getElementById('userNameGami').innerText = userData.nama;
+    document.getElementById('userEmailGami').innerText = userData.email;
+    document.getElementById('userAvatarImg').src = userData.foto;
+    document.getElementById('userPoints').innerText = userData.points;
+    document.getElementById('userStreak').innerText = userData.streak;
     
-    // Logika Streak
-    if (userStats.lastLogin !== today) {
-        let yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        if (userStats.lastLogin === yesterday.toLocaleDateString('id-ID')) {
-            userStats.streak += 1; // Sambung streak
-        } else {
-            userStats.streak = 1; // Putus, ulang dari 1
-        }
-        userStats.lastLogin = today;
-        localStorage.setItem('karisma_user_stats', JSON.stringify(userStats));
-    }
-    
-    // Update UI Gamifikasi
-    if(document.getElementById('userPoints')) {
-        document.getElementById('userPoints').innerText = userStats.points;
-        document.getElementById('userStreak').innerText = userStats.streak;
-        
-        let title = userStats.points > 200 ? "Aktivis Garis Keras" : (userStats.points > 50 ? "Pengamat Aktif" : "Mahasiswa Biasa");
-        document.getElementById('userTitleGami').innerText = title;
-        
-        // Cek Nama dari Auth
-        if(window.auth && window.auth.currentUser) {
-            let nama = window.auth.currentUser.displayName || window.auth.currentUser.email.split('@')[0];
-            document.getElementById('userNameGami').innerText = nama;
-            document.getElementById('userAvatarInitials').innerText = nama.charAt(0).toUpperCase();
-        }
+    // Render Badges
+    let badgeContainer = document.getElementById('badgesContainer');
+    if(!userData.badges || userData.badges.length === 0) {
+        badgeContainer.innerHTML = `<span class="badge bg-light text-muted border w-100 py-2">Belum ada pencapaian. Mulaiah berinteraksi!</span>`;
+    } else {
+        badgeContainer.innerHTML = userData.badges.map(b => `<span class="badge bg-warning text-dark-blue shadow-sm py-2 px-3"><i class="fa-solid fa-award me-1"></i> ${b}</span>`).join('');
     }
 }
-setTimeout(initGamification, 1000); // Panggil setelah load
 
-function tambahPoin(jumlah, alasan) {
-    let userStats = JSON.parse(localStorage.getItem('karisma_user_stats'));
-    userStats.points += jumlah;
-    localStorage.setItem('karisma_user_stats', JSON.stringify(userStats));
-    initGamification();
-    Swal.fire({ title: `+${jumlah} Poin!`, text: alasan, icon: 'success', timer: 2000, showConfirmButton: false, toast: true, position: 'top-end' });
+// Cek Syarat Badge Secara Otomatis
+function checkAndAwardBadges(uid, userData) {
+    let newBadges = [];
+    if(userData.votesCount >= 1 && !userData.badges?.includes("Pemilih Perdana")) newBadges.push("Pemilih Perdana");
+    if(userData.votesCount >= 10 && !userData.badges?.includes("Aktivis Kampus")) newBadges.push("Aktivis Kampus");
+    if(userData.points >= 100 && !userData.badges?.includes("Kritis")) newBadges.push("Kritis");
+    if(userData.challengesCount >= 5 && !userData.badges?.includes("Analis Kebijakan")) newBadges.push("Analis Kebijakan");
+
+    if(newBadges.length > 0) {
+        let updatedBadges = [...(userData.badges || []), ...newBadges];
+        window.db.ref('karisma_users/' + uid + '/badges').set(updatedBadges);
+        Swal.fire({ title: 'Pencapaian Baru Terbuka!', text: `Selamat! Anda mendapatkan Badge: ${newBadges.join(', ')}`, icon: 'success', confirmButtonColor: '#0B192C' });
+    }
 }
 
-// --- 5.1 POLLING ANIMASI REALTIME ---
+function tambahPoinFirebase(uid, jumlahPoin) {
+    const ref = window.db.ref('karisma_users/' + uid);
+    ref.once('value').then(snap => {
+        let d = snap.val();
+        if(d) {
+            d.points += jumlahPoin;
+            ref.set(d);
+            renderPersonalDashboard(d);
+            checkAndAwardBadges(uid, d);
+            Swal.fire({ title: `+${jumlahPoin} Poin!`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        }
+    });
+}
+
+// --- 5.1 LIVE POLLING REALTIME ---
 function renderPollingRealtime() {
-    let defaultPoll = { 
-        q: "Apakah transparansi UKT saat ini sudah cukup jelas?", 
-        opts: ["Sudah Sangat Jelas", "Cukup, tapi perlu ditingkatkan", "Sangat Gelap & Membingungkan"], 
-        votes: [12, 45, 189], 
-        reactions: { fire: 12, thumbsUp: 5, thumbsDown: 2 } 
-    };
-    let data = window.globalData.karisma_modern_poll || defaultPoll;
+    let data = window.globalData.karisma_modern_poll;
+    if(!data || !data.q) {
+        if(document.getElementById('pollQuestionUI')) document.getElementById('pollQuestionUI').innerText = "Belum ada polling aktif.";
+        return;
+    }
     
-    if(!document.getElementById('pollQuestionUI')) return;
     document.getElementById('pollQuestionUI').innerText = data.q;
+    document.getElementById('pollReactionsUI').style.display = "flex";
     
-    let totalVotes = data.votes.reduce((a, b) => a + b, 0);
-    document.getElementById('pollTotalVotes').innerText = `${totalVotes} Suara Masuk`;
+    let totalVotes = data.votes ? data.votes.reduce((a, b) => a + b, 0) : 0;
+    document.getElementById('pollTotalVotes').innerText = `${totalVotes} Suara`;
     
-    let isVoted = localStorage.getItem('voted_poll_' + data.q);
+    // Cek apakah user saat ini sudah vote dari data realtime (kita gunakan local flag sbg pengaman UI agar tidak spam klik)
+    let isVoted = window.currentUid ? localStorage.getItem('voted_' + window.currentUid + '_' + data.q) : false;
     
     document.getElementById('pollOptionsContainer').innerHTML = data.opts.map((opt, i) => {
-        let percentage = totalVotes === 0 ? 0 : Math.round((data.votes[i] / totalVotes) * 100);
-        let fillStyle = isVoted ? `width: ${percentage}%` : `width: 0%`;
-        let pctText = isVoted ? `<span class="float-end fw-bold">${percentage}%</span>` : '';
-        let btnClass = isVoted && isVoted == i ? 'voted' : '';
+        let count = data.votes ? (data.votes[i] || 0) : 0;
+        let percentage = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
         
-        return `
-        <button class="poll-option-btn ${btnClass} w-100" onclick="submitVote(${i}, '${data.q}')" ${isVoted ? 'disabled' : ''}>
-            <div class="poll-progress-fill" style="${fillStyle}"></div>
-            <div class="d-flex justify-content-between position-relative z-index-1">
-                <span>${['A','B','C','D','E'][i]}. ${opt}</span>
-                ${pctText}
-            </div>
-        </button>`;
+        if (isVoted) {
+            let isWin = percentage === Math.max(...data.votes.map(v => Math.round((v/totalVotes)*100) || 0));
+            let color = isWin ? '#FFC107' : '#e9ecef';
+            return `
+            <div class="mb-2 position-relative rounded-3" style="background: #f8f9fa; border: 1px solid #dee2e6; overflow: hidden;">
+                <div style="width: ${percentage}%; height: 100%; background: ${color}; position: absolute; opacity: 0.3; transition: width 1s ease;"></div>
+                <div class="d-flex justify-content-between p-3 position-relative z-index-1">
+                    <span class="fw-bold text-dark">${opt}</span>
+                    <span class="fw-bold ${isWin ? 'text-warning' : 'text-muted'}">${percentage}% <span class="small fw-normal">(${count})</span></span>
+                </div>
+            </div>`;
+        } else {
+            return `<button class="poll-option-btn w-100" onclick="submitVote(${i}, '${data.q}')"><span>${opt}</span></button>`;
+        }
     }).join('');
 
     document.getElementById('reactFire').innerText = data.reactions?.fire || 0;
@@ -349,12 +358,22 @@ function renderPollingRealtime() {
 }
 
 function submitVote(idx, questionKey) {
+    if(!window.currentUid) return Swal.fire('Akses Ditolak', 'Harap login terlebih dahulu untuk memberikan suara.', 'warning');
+    
     let data = window.globalData.karisma_modern_poll;
+    if(!data.votes) data.votes = new Array(data.opts.length).fill(0);
     data.votes[idx] += 1;
+    
     window.db.ref('karisma_modern_poll').set(data);
-    localStorage.setItem('voted_poll_' + questionKey, idx);
-    tambahPoin(10, 'Berpartisipasi dalam Polling');
-    renderPollingRealtime();
+    localStorage.setItem('voted_' + window.currentUid + '_' + questionKey, 'true');
+    
+    // Tambah poin dan riwayat aktivitas ke Firebase
+    const userRef = window.db.ref('karisma_users/' + window.currentUid);
+    userRef.once('value').then(snap => {
+        let ud = snap.val();
+        if(ud) { ud.votesCount += 1; userRef.set(ud); }
+    });
+    tambahPoinFirebase(window.currentUid, 2); 
 }
 
 function kirimReaksi(type) {
@@ -364,54 +383,92 @@ function kirimReaksi(type) {
     window.db.ref('karisma_modern_poll/reactions').set(data.reactions);
 }
 
-// --- 5.2 DAILY CHALLENGE ---
+// --- 5.2 TANTANGAN KRITIS REALTIME ---
 function renderDailyChallenge() {
-    let todayDate = new Date().toLocaleDateString('id-ID');
-    let defaultDaily = { 
-        date: todayDate, title: "Fungsi Legislatif", q: "Apa fungsi utama DPR selain Legislasi dan Anggaran?", 
-        opts: ["Eksekusi Hukum", "Pengawasan (Control)", "Yudikasi", "Diplomasi Internasional"], ans: 1, 
-        exp: "Pengawasan (Control) adalah fungsi DPR untuk mengawasi jalannya pemerintahan agar sesuai undang-undang." 
-    };
-    let data = window.globalData.karisma_daily || defaultDaily;
+    let data = window.globalData.karisma_daily;
+    if(!data || !data.q) {
+        if(document.getElementById('dailyQuestionUI')) document.getElementById('dailyQuestionUI').innerText = "Belum ada tantangan hari ini.";
+        return;
+    }
     
-    if(!document.getElementById('dailyQuestionUI')) return;
     document.getElementById('dailyTitleUI').innerText = data.title;
     document.getElementById('dailyQuestionUI').innerText = data.q;
     
-    let isDone = localStorage.getItem('daily_done_' + data.date);
+    let isDone = window.currentUid ? localStorage.getItem('daily_done_' + window.currentUid + '_' + data.date) : false;
+    let resBox = document.getElementById('dailyResult');
     
     if(isDone) {
-        document.getElementById('dailyOptionsContainer').innerHTML = `<p class="text-success bg-white p-3 rounded-3 fw-bold"><i class="fa-solid fa-circle-check me-2"></i>Tantangan hari ini sudah diselesaikan!</p>`;
-        let resBox = document.getElementById('dailyResult');
+        document.getElementById('dailyOptionsContainer').innerHTML = `<p class="text-success bg-white p-3 rounded-3 fw-bold"><i class="fa-solid fa-circle-check me-2"></i>Tantangan diselesaikan!</p>`;
         resBox.classList.remove('d-none'); resBox.classList.add('bg-light', 'text-dark-blue');
         resBox.innerHTML = `<strong>💡 Penjelasan:</strong><br>${data.exp}`;
     } else {
+        resBox.classList.add('d-none');
         document.getElementById('dailyOptionsContainer').innerHTML = data.opts.map((opt, i) => 
-            `<button class="btn btn-outline-light text-start py-2 px-3 rounded-pill" onclick="jawabDaily(${i})">${opt}</button>`
+            `<button class="btn btn-outline-light text-start py-2 px-3 rounded-pill" onclick="jawabDaily(${i}, ${data.ans}, '${data.exp}', '${data.date}')">${opt}</button>`
         ).join('');
     }
 }
 
-function jawabDaily(idxSelected) {
-    let data = window.globalData.karisma_daily;
-    localStorage.setItem('daily_done_' + data.date, 'true');
+function jawabDaily(idxSelected, idxBenar, exp, dateKey) {
+    if(!window.currentUid) return Swal.fire('Akses Ditolak', 'Harap login untuk menjawab tantangan.', 'warning');
     
+    localStorage.setItem('daily_done_' + window.currentUid + '_' + dateKey, 'true');
     let resBox = document.getElementById('dailyResult');
-    resBox.classList.remove('d-none');
+    resBox.classList.remove('d-none', 'bg-light', 'text-dark-blue', 'bg-success', 'bg-danger');
     
-    if(idxSelected === data.ans) {
-        tambahPoin(20, 'Menjawab Challenge dengan Benar!');
+    // Tambah hitungan challenge ke akun user
+    const userRef = window.db.ref('karisma_users/' + window.currentUid);
+    userRef.once('value').then(snap => { let ud = snap.val(); if(ud) { ud.challengesCount += 1; userRef.set(ud); } });
+
+    if(idxSelected === idxBenar) {
+        tambahPoinFirebase(window.currentUid, 20);
         resBox.classList.add('bg-success', 'text-white');
-        resBox.innerHTML = `<strong>Jawaban Tepat! (+20 Poin)</strong><br>${data.exp}`;
+        resBox.innerHTML = `<strong>Jawaban Benar! (+20 Poin)</strong><br>${exp}`;
     } else {
+        tambahPoinFirebase(window.currentUid, 5);
         resBox.classList.add('bg-danger', 'text-white');
-        resBox.innerHTML = `<strong>Kurang Tepat.</strong><br>Jawaban benar: ${data.opts[data.ans]}<br><br>💡 Penjelasan:<br>${data.exp}`;
+        resBox.innerHTML = `<strong>Kurang Tepat. (+5 Poin Partisipasi)</strong><br>💡 Penjelasan:<br>${exp}`;
     }
     document.getElementById('dailyOptionsContainer').style.display = 'none';
 }
 
-// --- PANGGIL RENDER SAAT REALTIME UPDATE ---
-// (Tambahkan renderPollingRealtime() dan renderDailyChallenge() ke dalam fungsi updateUISecaraRealtime() yang sudah ada di atas)
+// --- 5.3 LEADERBOARD REALTIME ---
+function renderLeaderboard() {
+    // Tarik data users, ubah ke array, urutkan berdasarkan poin terbesar
+    let usersData = window.globalData.karisma_users;
+    let lbContainer = document.getElementById('leaderboardContainer');
+    if(!lbContainer) return;
+
+    if(!usersData) {
+        lbContainer.innerHTML = `<p class="text-muted small text-center my-3">Belum ada peringkat minggu ini.</p>`;
+        return;
+    }
+
+    let usersArray = Object.values(usersData).filter(u => u.points > 0).sort((a, b) => b.points - a.points).slice(0, 10);
+    
+    if(usersArray.length === 0) {
+        lbContainer.innerHTML = `<p class="text-muted small text-center my-3">Belum ada mahasiswa yang memperoleh poin minggu ini.</p>`;
+        return;
+    }
+
+    lbContainer.innerHTML = usersArray.map((u, i) => {
+        let badgeStyle = i === 0 ? 'bg-warning text-dark' : (i === 1 ? 'bg-secondary text-white' : (i === 2 ? 'bg-danger text-white' : 'bg-light text-muted border'));
+        let shortName = u.nama.split(' ')[0];
+        
+        return `
+        <div class="d-flex align-items-center justify-content-between p-2 rounded-3 hover-card">
+            <div class="d-flex align-items-center gap-3">
+                <span class="fw-bold ${i < 3 ? 'text-dark-blue fs-5' : 'text-muted'}">${i + 1}</span>
+                <img src="${u.foto || 'https://via.placeholder.com/150'}" class="rounded-circle border" style="width:35px; height:35px; object-fit:cover;">
+                <div>
+                    <span class="fw-bold fs-6 text-dark-blue d-block" style="line-height:1;">${shortName}</span>
+                    <small class="text-muted" style="font-size:10px;">${u.role === 'mod' ? 'Admin Kastrat' : 'Mahasiswa'}</small>
+                </div>
+            </div>
+            <span class="badge ${badgeStyle} rounded-pill px-3 py-2 shadow-sm">${u.points} Pts</span>
+        </div>`;
+    }).join('');
+}
 
 // ==========================================
 // 6. SENSOR KLIK UNTUK FITUR EDIT LANGSUNG (ADMIN ONLY)
