@@ -1,8 +1,7 @@
 // ==========================================
-// 1. SISTEM OTORISASI PORTAL MULTI-ROLES (GOOGLE & EMAIL)
+// 1. SISTEM OTORISASI & PROFIL PENGGUNA (FIREBASE REALTIME)
 // ==========================================
 
-// Daftar Email Panitia Kastrat yang berhak mendapat fitur "Mode Dewa"
 const DAFTAR_ADMIN_KASTRAT = [
     "2410914320014@mhs.ulm.ac.id",
     "2510914210051@mhs.ulm.ac.id",
@@ -11,6 +10,83 @@ const DAFTAR_ADMIN_KASTRAT = [
     "2510914120021@mhs.ulm.ac.id",
     "2510914220054@mhs.ulm.ac.id"
 ];
+
+function loginDenganGoogle() {
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(googleProvider)
+    .then((result) => {
+        handleUserLogin(result.user);
+    }).catch((error) => {
+        Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
+    });
+}
+
+function handleUserLogin(user) {
+    window.currentUid = user.uid;
+    const userRef = window.db.ref('karisma_users/' + user.uid);
+    const today = new Date().toLocaleDateString('id-ID');
+
+    userRef.once('value', snapshot => {
+        let userData = snapshot.val();
+        
+        // JIKA USER BARU PERTAMA KALI LOGIN
+        if (!userData) {
+            userData = {
+                nama: user.displayName || 'Mahasiswa Anonim',
+                email: user.email,
+                foto: user.photoURL || 'https://via.placeholder.com/150',
+                points: 0,
+                streak: 1,
+                lastLogin: today,
+                badges: [],
+                votesCount: 0,
+                challengesCount: 0
+            };
+        } else {
+            // JIKA USER LAMA, CEK STREAK LOGIN HARIAN
+            if (userData.lastLogin !== today) {
+                let yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (userData.lastLogin === yesterday.toLocaleDateString('id-ID')) {
+                    userData.streak += 1;
+                } else {
+                    userData.streak = 1; // Putus streak
+                }
+                userData.lastLogin = today;
+                userData.points += 5; // Poin login harian
+                Swal.fire({ title: '+5 Poin!', text: `Login harian berhasil. Streak: ${userData.streak} hari🔥`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+            }
+        }
+        
+        // Simpan pembaruan data ke Firebase
+        userRef.set(userData);
+        
+        // Penentuan Role (Dewa vs Mahasiswa Biasa)
+        if (DAFTAR_ADMIN_KASTRAT.includes(user.email)) {
+            window.role = 'mod'; 
+            document.getElementById('mainBody').classList.add('admin-mode');
+            document.getElementById('loginBtnText').innerHTML = `<i class="fa-solid fa-crown me-1"></i> Mode Dewa`;
+            document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-danger');
+            document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'inline-flex', 'important'));
+        } else {
+            window.role = 'guest'; 
+            document.getElementById('mainBody').classList.remove('admin-mode');
+            let namaDepan = userData.nama.split(' ')[0];
+            document.getElementById('loginBtnText').innerHTML = `<img src="${userData.foto}" class="rounded-circle me-1" width="22" height="22" style="object-fit:cover;"> ${namaDepan}`;
+            document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-success');
+        }
+
+        // Buka gembok overlay Dasbor Kanan
+        if(document.getElementById('authOverlay')) document.getElementById('authOverlay').style.display = 'none';
+        
+        // Tutup Modal
+        bootstrap.Modal.getInstance(document.getElementById('loginModal'))?.hide();
+        
+        // Render UI Data Personal
+        renderPersonalDashboard(userData);
+        checkAndAwardBadges(user.uid, userData);
+    });
+}
 
 // FUNGSI 1: LOGIN MENGGUNAKAN GOOGLE
 function loginDenganGoogle() {
@@ -419,8 +495,4 @@ async function editDailyDewa() {
         await window.db.ref('karisma_daily').set(newData); 
         Swal.fire({title: 'Tantangan Mengudara!', text: 'Mahasiswa kini bisa menjawab tantangan baru Anda.', icon: 'success'});
     }
-}
-
-function mulaiKompas() {
-    Swal.fire('Kompas Politik', 'Fitur Analisis Persona sedang dalam sinkronisasi data dengan sistem psikologi. Segera hadir!', 'info');
 }
