@@ -82,20 +82,48 @@ function cekHakAkses(emailPengguna, namaPengguna) {
 }
 
 // ==========================================
-// 2. LIVE EDITING KONTEN STRUKTUR WEB
+// 2. LIVE EDITING KONTEN & GAYA FONT (INLINE)
 // ==========================================
-async function editTeks(elId, label, isInput = false) {
+async function editTeks(elId, label) {
     const el = document.getElementById(elId);
-    const { value: text } = await Swal.fire({ 
-        title: `Edit Konten ${label}`, 
-        input: isInput ? 'text' : 'textarea', 
-        inputValue: el.innerText.trim(), 
+    const currentText = el.innerText.trim();
+    // Tarik data font saat ini dari cloud jika ada
+    const currentFont = window.globalData['font_' + elId] || '';
+
+    const { value: formValues } = await Swal.fire({ 
+        title: `Ubah Teks: ${label}`, 
+        html: 
+            `<textarea id="swal-input-text" class="swal2-textarea" style="height: 150px; font-size: 1rem;" placeholder="Ketik teks di sini...">${currentText}</textarea>` +
+            `<div class="mt-3 text-start"><label class="fw-bold mb-1 text-dark-blue small"><i class="fa-solid fa-font me-1"></i> Pilih Gaya Tulisan (Font):</label>` +
+            `<select id="swal-input-font" class="swal2-select w-100 m-0" style="font-size: 0.9rem;">
+                <option value="" ${currentFont === '' ? 'selected' : ''}>-- Mengikuti Font Bawaan Tema --</option>
+                <option value="'Poppins', sans-serif" style="font-family: 'Poppins', sans-serif;" ${currentFont === "'Poppins', sans-serif" ? 'selected' : ''}>Poppins (Modern & Tegas)</option>
+                <option value="'Montserrat', sans-serif" style="font-family: 'Montserrat', sans-serif;" ${currentFont === "'Montserrat', sans-serif" ? 'selected' : ''}>Montserrat (Elegan & Lebar)</option>
+                <option value="'Oswald', sans-serif" style="font-family: 'Oswald', sans-serif;" ${currentFont === "'Oswald', sans-serif" ? 'selected' : ''}>Oswald (Tinggi & Rapat)</option>
+                <option value="'Playfair Display', serif" style="font-family: 'Playfair Display', serif;" ${currentFont === "'Playfair Display', serif" ? 'selected' : ''}>Playfair (Klasik / Estetik)</option>
+                <option value="'Lora', serif" style="font-family: 'Lora', serif;" ${currentFont === "'Lora', serif" ? 'selected' : ''}>Lora (Gaya Naskah Jurnal)</option>
+                <option value="'Roboto', sans-serif" style="font-family: 'Roboto', sans-serif;" ${currentFont === "'Roboto', sans-serif" ? 'selected' : ''}>Roboto (Bersih & Rapi)</option>
+                <option value="monospace" style="font-family: monospace;" ${currentFont === "monospace" ? 'selected' : ''}>Monospace (Gaya Mesin Tik)</option>
+                <option value="cursive" style="font-family: cursive;" ${currentFont === "cursive" ? 'selected' : ''}>Cursive (Tulisan Tangan)</option>
+            </select></div>`,
+        focusConfirm: false,
         showCancelButton: true,
-        confirmButtonColor: '#0B192C'
+        confirmButtonColor: '#0B192C',
+        confirmButtonText: '<i class="fa-solid fa-floppy-disk me-1"></i> Simpan ke Cloud',
+        preConfirm: () => {
+            return {
+                text: document.getElementById('swal-input-text').value,
+                font: document.getElementById('swal-input-font').value
+            }
+        }
     });
-    if (text) { 
-        window.db.ref(elId).set(text); 
-        Swal.fire({title: 'Sinkronisasi Berhasil!', text: 'Perubahan konten telah di-push ke cloud.', icon: 'success'}); 
+    
+    if (formValues) { 
+        // Simpan Teksnya
+        window.db.ref(elId).set(formValues.text); 
+        // Simpan Font-nya ke brankas khusus dengan awalan font_
+        window.db.ref('font_' + elId).set(formValues.font); 
+        Swal.fire({title: 'Tersimpan!', text: 'Perubahan teks dan font berhasil mengudara.', icon: 'success', timer: 2000, showConfirmButton: false}); 
     }
 }
 
