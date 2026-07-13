@@ -7,11 +7,18 @@ window.db.ref().on('value', (snapshot) => {
 });
 
 function updateUISecaraRealtime() {
-    // Render komponen teks dinamis dari cloud
+    // Render komponen teks dan FONT dinamis dari cloud
     const textIds = ['teksBannerUtama', 'teksBannerSub', 'teksKutipan', 'teksProfilDetail', 'teksTtd1', 'teksTtd2', 'teksMarquee', 'tekaTekiSoal'];
     textIds.forEach(id => {
-        if(window.globalData[id] && document.getElementById(id)) {
-            document.getElementById(id).innerText = window.globalData[id]; 
+        if(document.getElementById(id)) {
+            // Pasang Teksnya
+            if(window.globalData[id] !== undefined) document.getElementById(id).innerText = window.globalData[id]; 
+            // Pasang Gaya Font-nya
+            if(window.globalData['font_' + id]) {
+                document.getElementById(id).style.fontFamily = window.globalData['font_' + id];
+            } else {
+                document.getElementById(id).style.fontFamily = ""; // Reset jika kembali ke bawaan
+            }
         }
     });
 
@@ -280,3 +287,27 @@ function shareTo(platform) {
         Swal.fire({title: 'Tautan Berhasil Disalin!', icon: 'success', confirmButtonColor: '#0B192C'}); 
     } 
 }
+
+// ==========================================
+// 6. SENSOR KLIK UNTUK FITUR EDIT LANGSUNG (ADMIN ONLY)
+// ==========================================
+document.addEventListener('click', function(e) {
+    // Jika yang klik adalah Admin, dan elemen yang diklik punya class "editable-text"
+    if((window.role === 'admin' || window.role === 'mod')) {
+        const targetEl = e.target.closest('.editable-text');
+        if(targetEl && targetEl.id) {
+            e.preventDefault(); // Mencegah pindah halaman jika teks berupa link
+            
+            // Tentukan label pop-up berdasarkan ID teksnya
+            let label = "Blok Teks";
+            if(targetEl.id === 'teksBannerUtama') label = "Judul Utama";
+            else if(targetEl.id === 'teksBannerSub') label = "Sub Judul";
+            else if(targetEl.id === 'teksKutipan') label = "Kutipan Profil";
+            else if(targetEl.id === 'teksProfilDetail') label = "Paragraf Profil";
+            
+            if(typeof editTeks === 'function') {
+                editTeks(targetEl.id, label);
+            }
+        }
+    }
+});
