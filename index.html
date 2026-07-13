@@ -158,26 +158,42 @@
         </div>
     </section>
 
-    <section id="repositori" class="py-5 bg-dark-blue text-white">
+<section id="repositori" class="py-5 bg-dark-blue position-relative">
         <div class="container py-5">
             <div class="text-center mb-5">
                 <h2 id="judulRepo" class="fw-bold text-warning d-inline-block border-bottom border-4 border-light pb-2 editable-text">PERPUSTAKAAN KAJIAN (PDF)</h2>
                 <p id="subRepo" class="text-light opacity-75 mt-2 editable-text">Unduh naskah akademik, policy brief, dan hasil kajian resmi KARISMA.</p>
-                <button class="btn btn-sm btn-success admin-only mt-2" onclick="tambahDokumen()"><i class="fa-solid fa-upload"></i> Unggah Dokumen Baru</button>
+                <button class="btn btn-light text-dark-blue fw-bold admin-only mt-3 px-4 py-2 rounded-pill shadow" onclick="tambahDokumen()"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Unggah Dokumen Baru</button>
             </div>
+            
             <div class="row justify-content-center">
                 <div class="col-md-10">
-                    <div class="table-responsive bg-white rounded-4 shadow-lg p-2">
-                        <table class="table table-hover table-bordered align-middle mb-0">
-                            <thead class="table-dark text-center">
-                                <tr>
-                                    <th width="50%" class="py-3">Judul Dokumen</th>
-                                    <th width="25%" class="py-3">Kategori</th>
-                                    <th width="25%" class="py-3 text-center">Aksi (Unduh)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pdfContainer"></tbody>
-                        </table>
+                    <div class="bg-white p-4 p-md-5" style="border-radius: 24px; box-shadow: 0 24px 48px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);">
+                        
+                        <div class="row g-3 mb-4 align-items-center">
+                            <div class="col-md-6">
+                                <div class="input-group shadow-sm" style="border-radius: 999px; overflow: hidden; border: 1px solid #e0e0e0;">
+                                    <span class="input-group-text bg-white border-0 text-muted ps-4"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                    <input type="text" id="searchRepoInput" class="form-control border-0 py-2 fs-6 shadow-none" placeholder="Cari judul dokumen..." onkeyup="filterRepositori()">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select id="filterRepoKategori" class="form-select border-0 shadow-sm py-2 text-muted fw-medium" style="border-radius: 999px; background-color: #f8f9fa;" onchange="filterRepositori()">
+                                    <option value="Semua">Semua Kategori</option>
+                                    <option value="Kajian">Kajian Kastrat</option>
+                                    <option value="Policy Brief">Policy Brief</option>
+                                    <option value="Riset">Riset</option>
+                                    <option value="Artikel">Artikel</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 text-md-end text-muted small fw-bold">
+                                <span id="repoCount" class="text-dark-blue fs-5">0</span> Dokumen
+                            </div>
+                        </div>
+                        
+                        <div id="pdfContainer" class="d-flex flex-column gap-3">
+                            </div>
+                        
                     </div>
                 </div>
             </div>
