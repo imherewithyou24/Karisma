@@ -239,21 +239,36 @@ function ubahStatusTracker(i, stat){
 }
 
 async function tambahAgenda(){ 
-    const {value: f} = await Swal.fire({html: '<input id="a1" class="swal2-input" placeholder="Tanggal Rencana (Misal: 25 Jun)"><input id="a2" class="swal2-input" placeholder="Nama Gerakan/Agenda">', preConfirm: () => [document.getElementById('a1').value, document.getElementById('a2').value]}); 
+    const {value: f} = await Swal.fire({
+        title: 'Tambah Agenda Baru',
+        html: '<input id="a1" class="swal2-input" placeholder="Tanggal (Misal: 25 Jun)">' +
+              '<input id="a2" class="swal2-input" placeholder="Nama Gerakan/Agenda">' +
+              '<input id="a3" class="swal2-input" placeholder="Keterangan / Lokasi (Ketik Bebas)">', 
+        preConfirm: () => [document.getElementById('a1').value, document.getElementById('a2').value, document.getElementById('a3').value]
+    }); 
     if(f && f[1]){ 
         let d = window.globalData.karisma_agenda || []; 
-        d.push({d: f[0], t: f[1], ds: "Telah divalidasi sistem"}); 
+        d.push({d: f[0] || 'TBA', t: f[1], ds: f[2] || "Menunggu informasi lanjutan"}); 
         window.db.ref('karisma_agenda').set(d);
+        Swal.fire({title: 'Agenda Ditambahkan!', icon: 'success'});
     } 
 }
+
 function hapusAgenda(i){ let d = window.globalData.karisma_agenda; d.splice(i, 1); window.db.ref('karisma_agenda').set(d); }
 
 async function tambahDokumen(){ 
-    const {value: f} = await Swal.fire({html: '<input id="r1" class="swal2-input" placeholder="Judul Dokumen Naskah Akademik"><input id="r2" class="swal2-input" placeholder="Link Google Drive PDF Resmi">', preConfirm: () => [document.getElementById('r1').value, document.getElementById('r2').value]}); 
+    const {value: f} = await Swal.fire({
+        title: 'Unggah Dokumen PDF',
+        html: '<input id="r1" class="swal2-input" placeholder="Judul Dokumen Naskah">' +
+              '<input id="rKategori" class="swal2-input" placeholder="Kategori (Bebas: Policy Brief/Kajian/dll)">' +
+              '<input id="r2" class="swal2-input" placeholder="Link Google Drive PDF Resmi">', 
+        preConfirm: () => [document.getElementById('r1').value, document.getElementById('r2').value, document.getElementById('rKategori').value]
+    }); 
     if(f && f[0]){ 
         let d = window.globalData.karisma_repo || []; 
-        d.unshift({j: f[0], k: "Kajian Kastrat", t: "Baru", l: f[1]}); 
+        d.unshift({j: f[0], k: f[2] || "Kajian Kastrat", t: "Baru", l: f[1]}); 
         window.db.ref('karisma_repo').set(d);
+        Swal.fire({title: 'Dokumen Mengudara!', icon: 'success'});
     } 
 }
 function hapusRepo(i){ let d = window.globalData.karisma_repo; d.splice(i, 1); window.db.ref('karisma_repo').set(d); }
