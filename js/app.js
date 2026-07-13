@@ -180,24 +180,86 @@ function renderAgenda(){
     }
 }
 
-function renderRepositori(){ 
-    let dRepo = [{ j:"Tata Tertib MABA 2026", k:"Kajian Kastrat", t:"Agustus 17 2026", l:"#" }];
+// Fungsi Penentu Warna Kategori Dinamis
+function getBadgeClass(kategori) {
+    let cat = (kategori || '').toLowerCase();
+    if(cat.includes('policy')) return 'badge-policy';
+    if(cat.includes('riset')) return 'badge-riset';
+    if(cat.includes('artikel')) return 'badge-artikel';
+    if(cat.includes('kajian')) return 'badge-kajian';
+    return 'badge-default';
+}
+
+// Render Dashboard PDF Baru
+function renderRepositori(filterKeyword = "", filterCategory = "Semua"){ 
+    let dRepo = [
+        { j:"Kajian Kebijakan UKT Nominal 2026", k:"Kajian Kastrat", t:"12 Juli 2026", l:"#" },
+        { j:"Policy Brief RUU Penyiaran", k:"Policy Brief", t:"05 Juli 2026", l:"#" }
+    ];
     let d = window.globalData.karisma_repo || dRepo; 
-    if(document.getElementById('pdfContainer')) {
-        document.getElementById('pdfContainer').innerHTML = d.map((x, i) => `
-            <tr>
-                <td class="text-dark fw-bold">${x.j}</td>
-                <td class="text-center"><span class="badge bg-secondary">${x.k || 'Kajian'}</span></td>
-                <td class="text-center">
-                    <a href="${x.l}" target="_blank" class="btn btn-sm btn-primary fw-bold rounded-pill px-3 shadow-sm"><i class="fa-solid fa-download me-1"></i> Unduh</a> 
-                    <button class="btn btn-sm btn-danger admin-only ms-1 shadow-sm" style="display:none;" onclick="hapusRepo(${i})"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            </tr>`).join(''); 
+    
+    // Mesin Filter & Pencarian
+    let filteredData = d.filter(x => {
+        let matchKeyword = x.j.toLowerCase().includes(filterKeyword.toLowerCase());
+        let matchCategory = filterCategory === "Semua" || (x.k && x.k.toLowerCase().includes(filterCategory.toLowerCase()));
+        return matchKeyword && matchCategory;
+    });
+
+    let container = document.getElementById('pdfContainer');
+    if(!container) return;
+
+    // Update Angka Jumlah Dokumen
+    if(document.getElementById('repoCount')) document.getElementById('repoCount').innerText = filteredData.length;
+
+    // 1. Tampilan "Empty State" (Jika File Kosong/Tidak Ditemukan)
+    if (filteredData.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5 my-4">
+                <i class="fa-solid fa-folder-open text-muted opacity-25" style="font-size: 4rem; margin-bottom: 20px;"></i>
+                <h5 class="fw-bold text-dark-blue">Belum ada dokumen</h5>
+                <p class="text-muted">Gunakan kata kunci lain atau unggah dokumen baru dari Mode Dewa.</p>
+            </div>`;
+    } 
+    // 2. Tampilan Card List Modern
+    else {
+        container.innerHTML = filteredData.map((x, i) => {
+            // Index asli untuk penghapusan
+            let originalIndex = d.findIndex(item => item.j === x.j && item.l === x.l);
+            
+            return `
+            <div class="doc-card d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="bg-light rounded-3 p-3 text-danger fs-3 d-none d-md-block shadow-sm">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark-blue mb-2">${x.j}</h5>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="badge-modern ${getBadgeClass(x.k)}">${x.k || 'Dokumen'}</span>
+                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>PDF • ${Math.floor(Math.random() * 2 + 1)}.${Math.floor(Math.random() * 9)} MB</span>
+                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>${x.t || 'Baru Saja'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 justify-content-md-end">
+                    <a href="${x.l}" target="_blank" class="btn btn-download"><i class="fa-solid fa-cloud-arrow-down me-1"></i> Download</a> 
+                    <button class="btn btn-delete-modern admin-only" style="display:none;" onclick="hapusRepo(${originalIndex})"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>`;
+        }).join(''); 
     }
+
     if(window.role === 'admin' || window.role === 'mod') {
-        document.querySelectorAll('#repositori .admin-only').forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
+        document.querySelectorAll('#repositori .admin-only').forEach(el => el.style.setProperty('display', 'inline-flex', 'important'));
     }
 }
+
+// Fungsi Pemicu Interaksi Saat Ngetik di Search Bar
+window.filterRepositori = function() {
+    let kw = document.getElementById('searchRepoInput') ? document.getElementById('searchRepoInput').value : "";
+    let cat = document.getElementById('filterRepoKategori') ? document.getElementById('filterRepoKategori').value : "Semua";
+    renderRepositori(kw, cat);
+};
 
 // ==========================================
 // 5. MODUL INTERAKTIF & UTILITAS GLOBAL
