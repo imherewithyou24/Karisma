@@ -98,8 +98,12 @@
         </div>
     </section>
 
-    <section id="heroSection" class="text-center position-relative d-flex flex-column justify-content-center align-items-center" style="min-height: 85vh; background: linear-gradient(rgba(11, 25, 44, 0.85), rgba(11, 25, 44, 0.9)), url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1470') center/cover no-repeat;">
-        <div class="container mt-5">
+    <!-- HERO SECTION ANTI-BUG IPHONE V5 -->
+    <section id="heroSection" class="text-center position-relative d-flex flex-column justify-content-center align-items-center" style="min-height: 85vh; background-image: url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=1470'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+        <!-- Lapisan filter gelap yang dipisah agar tidak merusak gambar di iOS -->
+        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(rgba(11, 25, 44, 0.85), rgba(11, 25, 44, 0.9)); z-index: 1;"></div>
+        
+        <div class="container mt-5 position-relative" style="z-index: 2;">
             <h1 id="teksBannerUtama" class="display-2 fw-bold mb-2 text-white tracking-wide editable-text" style="letter-spacing: 2px; text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">[KARISMA]</h1>
             <h4 id="teksBannerSub" class="mb-4 fw-light text-light editable-text" style="text-shadow: 1px 1px 5px rgba(0,0,0,0.5);">Parlemen Mahasiswa Universitas Lambung Mangkurat<br>Divisi Kajian Strategis dan Politik</h4>
             <div class="mt-5">
