@@ -7,62 +7,73 @@ window.db.ref().on('value', (snapshot) => {
 });
 
 function updateUISecaraRealtime() {
-    // 1. SMART DETECTION: Update teks
-    document.querySelectorAll('.editable-text').forEach(el => {
-        if(el.id) {
-            // Hanya ganti teks jika datanya valid dan tidak kosong
-            if(window.globalData[el.id] !== undefined && window.globalData[el.id].trim() !== '') {
-                el.innerText = window.globalData[el.id]; 
+    try {
+        // 1. SMART DETECTION: Update teks
+        document.querySelectorAll('.editable-text').forEach(el => {
+            if(el.id && window.globalData) {
+                let data = window.globalData[el.id];
+                // PENCEGAHAN CRASH: Pastikan data benar-benar teks (string) sebelum diproses
+                if(data && typeof data === 'string' && data.trim() !== '') {
+                    el.innerText = data; 
+                }
+                
+                let fontData = window.globalData['font_' + el.id];
+                if(fontData && typeof fontData === 'string' && fontData.trim() !== '') {
+                    el.style.fontFamily = fontData;
+                } else {
+                    el.style.fontFamily = ""; 
+                }
             }
-            if(window.globalData['font_' + el.id]) {
-                el.style.fontFamily = window.globalData['font_' + el.id];
-            } else {
-                el.style.fontFamily = ""; 
-            }
-        }
-    });
+        });
 
-    // 2. FIX BUG IPHONE: Render Gambar dengan Filter Ketat
-    const imgIds = ['heroBg', 'logo1', 'logo2', 'logo3'];
-    imgIds.forEach(id => {
-        // HANYA pasang gambar jika link-nya valid (lebih dari 5 huruf/bukan kosong)
-        if(window.globalData[id] && window.globalData[id].length > 5) {
-if(id === 'heroBg') {
-                let heroEl = document.getElementById('heroSection');
-                // Langsung tembak ke background-image tanpa mencampur linear-gradient agar iPhone tidak crash
-                heroEl.style.backgroundImage = `url('${window.globalData[id]}')`;
-                heroEl.style.backgroundSize = 'cover';
-                heroEl.style.backgroundPosition = 'center';
-                heroEl.style.backgroundRepeat = 'no-repeat';
+        // 2. FIX BUG IPHONE: Render Gambar dengan Filter Ketat
+        const imgIds = ['heroBg', 'logo1', 'logo2', 'logo3'];
+        imgIds.forEach(id => {
+            let imgSrc = window.globalData[id];
+            // HANYA pasang gambar jika link-nya valid teks (lebih dari 5 huruf)
+            if(imgSrc && typeof imgSrc === 'string' && imgSrc.length > 5) {
+                if(id === 'heroBg') {
+                    let heroEl = document.getElementById('heroSection');
+                    if(heroEl) {
+                        heroEl.style.backgroundImage = `url('${imgSrc}')`;
+                        heroEl.style.backgroundSize = 'cover';
+                        heroEl.style.backgroundPosition = 'center';
+                        heroEl.style.backgroundRepeat = 'no-repeat';
+                    }
+                } else {
+                    let imgEl = document.getElementById(id);
+                    if(imgEl) imgEl.src = imgSrc;
+                }
             }
-            } else if(document.getElementById(id)) {
-                document.getElementById(id).src = window.globalData[id];
-            }
-        }
-    });
+        });
 
-    // 3. Sinkronisasi warna
-    if(window.globalData.karisma_theme) {
-        document.documentElement.style.setProperty('--dark-blue', window.globalData.karisma_theme);
-    }
-    
-    // 4. Render Modul Lain
-    renderTracker();
-    renderAgenda();
-    renderRepositori();
-    if(document.getElementById('searchInput')) cariBerita(); 
-    if(window.activeNewsId) renderKomentar(window.activeNewsId); 
-    
-    // 5. Gamifikasi
-    renderPollingRealtime();
-    renderDailyChallenge();
-    renderLeaderboard();
-    
-    // 6. Update stat
-    let inboxD = window.globalData.karisma_inbox || [];
-    if(document.getElementById('statInbox')) document.getElementById('statInbox').innerText = inboxD.length;
-    if(window.globalData.karisma_visitors && document.getElementById('statVisitor')) {
-        document.getElementById('statVisitor').innerText = window.globalData.karisma_visitors.toLocaleString();
+        // 3. Sinkronisasi warna
+        if(window.globalData.karisma_theme && typeof window.globalData.karisma_theme === 'string') {
+            document.documentElement.style.setProperty('--dark-blue', window.globalData.karisma_theme);
+        }
+        
+        // 4. Render Modul Lain
+        if(typeof renderTracker === 'function') renderTracker();
+        if(typeof renderAgenda === 'function') renderAgenda();
+        if(typeof renderRepositori === 'function') renderRepositori();
+        if(typeof cariBerita === 'function' && document.getElementById('searchInput')) cariBerita(); 
+        if(window.activeNewsId && typeof renderKomentar === 'function') renderKomentar(window.activeNewsId); 
+        
+        // 5. Gamifikasi
+        if(typeof renderPollingRealtime === 'function') renderPollingRealtime();
+        if(typeof renderDailyChallenge === 'function') renderDailyChallenge();
+        if(typeof renderLeaderboard === 'function') renderLeaderboard();
+        
+        // 6. Update stat
+        let inboxD = window.globalData.karisma_inbox || [];
+        if(document.getElementById('statInbox')) document.getElementById('statInbox').innerText = inboxD.length;
+        if(window.globalData.karisma_visitors && document.getElementById('statVisitor')) {
+            document.getElementById('statVisitor').innerText = window.globalData.karisma_visitors.toLocaleString();
+        }
+        
+    } catch (error) {
+        // Jika ada data yang aneh, sistem akan mengabaikannya dan tidak akan mati mendadak
+        console.error("Sistem UI Terhenti karena Error Data:", error);
     }
 }
 
