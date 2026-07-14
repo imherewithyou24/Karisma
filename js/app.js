@@ -27,13 +27,14 @@ function updateUISecaraRealtime() {
     imgIds.forEach(id => {
         // HANYA pasang gambar jika link-nya valid (lebih dari 5 huruf/bukan kosong)
         if(window.globalData[id] && window.globalData[id].length > 5) {
-            if(id === 'heroBg') {
-                // Dipecah spesifik agar Safari iOS tidak bingung membacanya
+if(id === 'heroBg') {
                 let heroEl = document.getElementById('heroSection');
-                heroEl.style.backgroundImage = `linear-gradient(rgba(11, 25, 44, 0.85), rgba(11, 25, 44, 0.9)), url('${window.globalData[id]}')`;
+                // Langsung tembak ke background-image tanpa mencampur linear-gradient agar iPhone tidak crash
+                heroEl.style.backgroundImage = `url('${window.globalData[id]}')`;
                 heroEl.style.backgroundSize = 'cover';
                 heroEl.style.backgroundPosition = 'center';
                 heroEl.style.backgroundRepeat = 'no-repeat';
+            }
             } else if(document.getElementById(id)) {
                 document.getElementById(id).src = window.globalData[id];
             }
