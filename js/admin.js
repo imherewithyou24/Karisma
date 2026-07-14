@@ -11,50 +11,43 @@ const DAFTAR_ADMIN_KASTRAT = [
     "2510914220054@mhs.ulm.ac.id"
 ];
 
-// Deteksi iOS / iPadOS
+// Deteksi cerdas apakah pengguna memakai iPhone/iPad/Mac Safari
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-// PAKSA PENYIMPANAN SESI (PERSISTENCE) AGAR SAFARI TIDAK AMNESIA
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    .catch((error) => {
-        console.error("Gagal mengatur persistence:", error);
-    });
-
-// DETEKSI 1: Tangkap Hasil Redirect (Tanpa memicu double login)
-firebase.auth().getRedirectResult()
-.then((result) => {
-    // Alert Debugging untuk melacak hasil bawaan dari server Google
-    alert("DEBUG 1 (Redirect Result):\n" + JSON.stringify({
-        user_ada: !!result.user,
-        credential_ada: !!result.credential
-    }));
-})
-.catch((error) => {
-    alert("DEBUG 1 ERROR (Redirect):\nKode: " + error.code + "\nPesan: " + error.message);
+// TANGKAP HASIL REDIRECT (Wajib ada untuk Safari/iPhone)
+firebase.auth().getRedirectResult().then((result) => {
+    if (result && result.user) {
+        handleUserLogin(result.user, true);
+    }
+}).catch((error) => {
+    console.error("Error dari Redirect iOS:", error);
 });
 
-// DETEKSI 2: Alarm State (Yang benar-benar mengurus proses masuk)
+// Alarm deteksi otomatis jika user nge-refresh web
 firebase.auth().onAuthStateChanged((user) => {
-    if (user) { 
-        alert("DEBUG 2 (Auth State): LOGIN MASUK -> " + user.email);
-        handleUserLogin(user, false); 
-    } else {
-        alert("DEBUG 2 (Auth State): BELUM LOGIN / SESSION HILANG");
-    }
+    if (user) { handleUserLogin(user, false); }
 });
 
 function loginDenganGoogle() {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     googleProvider.setCustomParameters({ prompt: 'select_account' });
 
+    // MESIN HYBRID LOGIN (Ide Tegar)
     if (isIOS) {
-        // Hapus Swal agar Safari tidak interupsi proses Redirect
-        firebase.auth().signInWithRedirect(googleProvider).catch((e) => {
-            alert("Gagal memicu Redirect:\n" + e.code + "\n" + e.message);
+        // JALUR IPHONE: Gunakan Redirect agar tidak kena blokir Pop-up Apple
+        Swal.fire({
+            title: 'Membuka Portal...',
+            text: 'Mengarahkan dengan aman khusus perangkat Apple...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
         });
+        firebase.auth().signInWithRedirect(googleProvider);
     } else {
+        // JALUR LAPTOP/ANDROID: Gunakan Popup agar lebih cepat
         firebase.auth().signInWithPopup(googleProvider)
-        .catch((error) => {
+        .then((result) => {
+            handleUserLogin(result.user, true);
+        }).catch((error) => {
             if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
                 Swal.fire({
                     title: 'Akses Dicekal',
@@ -70,38 +63,23 @@ function loginDenganGoogle() {
 }
 
 function loginDenganEmail() {
+    // TETAP VERSI ASLI (Sesuai Permintaan)
     const email = document.getElementById('emailInput').value;
     const pass = document.getElementById('passwordInput').value;
     
     if (email.trim() === '' || pass.trim() === '') { return Swal.fire('Oops...', 'Email dan Password tidak boleh kosong!', 'error'); }
 
-    Swal.fire({ title: 'Membuka Gerbang...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-
     firebase.auth().signInWithEmailAndPassword(email, pass)
-    .catch((error) => { 
-        if (error.code === 'auth/user-not-found') {
-            firebase.auth().createUserWithEmailAndPassword(email, pass)
-            .then((userCredential) => {
-                Swal.fire({title: 'Akun Terdaftar!', text: 'Sistem otomatis membuatkan akun baru untuk Anda.', icon: 'success', timer: 2500});
-            })
-            .catch((err) => { Swal.fire('Error Registrasi', err.message, 'error'); });
-        } 
-        else if (error.code === 'auth/wrong-password') {
-            Swal.fire({title: 'Akses Ditolak', text: 'Password yang Anda masukkan salah.', icon: 'error'});
-        } else {
-            Swal.fire({title: 'Akses Ditolak', text: error.message, icon: 'error'});
-        }
-    });
+    .then((userCredential) => { handleUserLogin(userCredential.user, true); })
+    .catch((error) => { Swal.fire({title: 'Akses Ditolak', text: 'Email atau password salah / belum terdaftar.', icon: 'error'}); });
 }
 
 function handleUserLogin(user, isBaruLoginManual = false) {
-    alert("DEBUG 3: Memulai ambil data Database untuk " + user.email);
     window.currentUid = user.uid;
     const userRef = window.db.ref('karisma_users/' + user.uid);
     const today = new Date().toLocaleDateString('id-ID');
 
     userRef.once('value').then(snapshot => {
-        alert("DEBUG 4: Berhasil terhubung ke Database RTDB!");
         let userData = snapshot.val();
         
         if (!userData) {
@@ -110,28 +88,18 @@ function handleUserLogin(user, isBaruLoginManual = false) {
                 foto: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || 'M') + '&background=0B192C&color=FFC107',
                 points: 0, streak: 1, lastLogin: today, badges: [], votesCount: 0, challengesCount: 0
             };
-            userRef.set(userData); // Set awal hanya jika akun benar-benar baru
         } else {
-            let updates = {};
             if (userData.lastLogin !== today) {
                 let yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-                if (userData.lastLogin === yesterday.toLocaleDateString('id-ID')) { 
-                    updates.streak = (userData.streak || 0) + 1; 
-                } else { 
-                    updates.streak = 1; 
-                }
-                updates.lastLogin = today; 
-                updates.points = (userData.points || 0) + 5;
-                if(isBaruLoginManual) { Swal.fire({ title: '+5 Poin!', text: `Login harian berhasil. Streak: ${updates.streak} hari🔥`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 }); }
+                if (userData.lastLogin === yesterday.toLocaleDateString('id-ID')) { userData.streak += 1; } 
+                else { userData.streak = 1; }
+                userData.lastLogin = today; userData.points += 5;
+                if(isBaruLoginManual) { Swal.fire({ title: '+5 Poin!', text: `Login harian berhasil. Streak: ${userData.streak} hari🔥`, icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 }); }
             }
-            if(!userData.foto && user.photoURL) updates.foto = user.photoURL;
-            
-            // PERBAIKAN: Gunakan UPDATE agar data lain (bio, role, dll) tidak terhapus
-            if (Object.keys(updates).length > 0) {
-                userRef.update(updates);
-                userData = {...userData, ...updates}; // Sinkronisasi objek lokal
-            }
+            if(!userData.foto) userData.foto = user.photoURL || 'https://ui-avatars.com/api/?name=' + userData.nama + '&background=0B192C&color=FFC107';
         }
+        
+        userRef.set(userData);
         
         if (DAFTAR_ADMIN_KASTRAT.includes(user.email)) {
             window.role = 'mod'; document.getElementById('mainBody').classList.add('admin-mode');
@@ -139,8 +107,7 @@ function handleUserLogin(user, isBaruLoginManual = false) {
             document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-danger');
             document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'inline-flex', 'important'));
         } else {
-            window.role = 'user'; // PERBAIKAN: Ubah dari 'guest' ke 'user'
-            document.getElementById('mainBody').classList.remove('admin-mode');
+            window.role = 'guest'; document.getElementById('mainBody').classList.remove('admin-mode');
             let namaDepan = userData.nama.split(' ')[0];
             document.getElementById('loginBtnText').innerHTML = `<img src="${userData.foto}" class="rounded-circle me-1" width="22" height="22" style="object-fit:cover;"> ${namaDepan}`;
             document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-success');
@@ -154,8 +121,6 @@ function handleUserLogin(user, isBaruLoginManual = false) {
         
         if(typeof renderPersonalDashboard === "function") renderPersonalDashboard(userData);
         if(typeof checkAndAwardBadges === "function") checkAndAwardBadges(user.uid, userData);
-    }).catch(error => {
-        alert("DEBUG 4 ERROR: Gagal akses Database!\n" + error.message);
     });
 }
 
