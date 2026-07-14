@@ -16,22 +16,25 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) { handleUserLogin(user, false); }
 });
 
-// Tangkap data jika user baru kembali dari halaman Login Apple/Safari
-firebase.auth().getRedirectResult().then((result) => {
-    if (result.user) { handleUserLogin(result.user, true); }
-}).catch((error) => { console.error("Redirect Error:", error); });
+// HAPUS KODE REDIRECT RESULT KARENA MEMBUAT IPHONE NGE-BUG
 
 function loginDenganGoogle() {
-    // KITA HAPUS LOADING-NYA AGAR TIDAK DIBLOKIR OLEH SISTEM KEAMANAN HP
     const googleProvider = new firebase.auth.GoogleAuthProvider();
-    
+    // Paksa Google menampilkan pilihan akun agar sistem otorisasi tidak error di iOS
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
+
     firebase.auth().signInWithPopup(googleProvider)
     .then((result) => {
         handleUserLogin(result.user, true);
     }).catch((error) => {
-        // Jika Safari/Chrome di HP masih memblokir pop-up, kita otomatis gunakan jalur Redirect (pindah halaman)
+        // JANGAN GUNAKAN REDIRECT LAGI AGAR DATABASE IPHONE TIDAK MATI
         if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
-            firebase.auth().signInWithRedirect(googleProvider);
+            Swal.fire({
+                title: 'Akses Dicekal Apple 🍎',
+                text: 'Safari memblokir jendela Login Google. Silakan ke [Pengaturan iPhone] > [Safari] > Matikan fitur [Block Pop-ups] atau [Blokir Pop-up], lalu coba lagi.',
+                icon: 'warning',
+                confirmButtonColor: '#0B192C'
+            });
         } else {
             Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
         }
