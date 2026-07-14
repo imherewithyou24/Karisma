@@ -16,8 +16,6 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) { handleUserLogin(user, false); }
 });
 
-// HAPUS KODE REDIRECT RESULT KARENA MEMBUAT IPHONE NGE-BUG
-
 function loginDenganGoogle() {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     // Paksa Google menampilkan pilihan akun agar sistem otorisasi tidak error di iOS
@@ -27,12 +25,12 @@ function loginDenganGoogle() {
     .then((result) => {
         handleUserLogin(result.user, true);
     }).catch((error) => {
-        // JANGAN GUNAKAN REDIRECT LAGI AGAR DATABASE IPHONE TIDAK MATI
         if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+            // PESAN BARU: Arahkan user untuk pakai form email di bawahnya
             Swal.fire({
-                title: 'Akses Dicekal Apple 🍎',
-                text: 'Safari memblokir jendela Login Google. Silakan ke [Pengaturan iPhone] > [Safari] > Matikan fitur [Block Pop-ups] atau [Blokir Pop-up], lalu coba lagi.',
-                icon: 'warning',
+                title: 'Jalur Google Diblokir 🍎',
+                text: 'Sistem Apple menolak jendela Google. SOLUSI: Silakan ketik sembarang Email & Password di kolom bawah, sistem akan otomatis mendaftarkan Anda!',
+                icon: 'info',
                 confirmButtonColor: '#0B192C'
             });
         } else {
@@ -47,9 +45,28 @@ function loginDenganEmail() {
     
     if (email.trim() === '' || pass.trim() === '') { return Swal.fire('Oops...', 'Email dan Password tidak boleh kosong!', 'error'); }
 
+    Swal.fire({ title: 'Membuka Gerbang...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+    // Coba Login
     firebase.auth().signInWithEmailAndPassword(email, pass)
     .then((userCredential) => { handleUserLogin(userCredential.user, true); })
-    .catch((error) => { Swal.fire({title: 'Akses Ditolak', text: 'Email atau password salah / belum terdaftar.', icon: 'error'}); });
+    .catch((error) => { 
+        // SMART REGISTER: Jika akun belum ada, langsung buatkan otomatis!
+        if (error.code === 'auth/user-not-found') {
+            firebase.auth().createUserWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+                handleUserLogin(userCredential.user, true);
+                Swal.fire({title: 'Akun Terdaftar!', text: 'Sistem otomatis membuatkan akun baru untuk Anda.', icon: 'success', timer: 2500});
+            })
+            .catch((err) => { Swal.fire('Error', err.message, 'error'); });
+        } 
+        // Jika password salah
+        else if (error.code === 'auth/wrong-password') {
+            Swal.fire({title: 'Akses Ditolak', text: 'Password yang Anda masukkan salah.', icon: 'error'});
+        } else {
+            Swal.fire({title: 'Akses Ditolak', text: error.message, icon: 'error'});
+        }
+    });
 }
 
 function handleUserLogin(user, isBaruLoginManual = false) {
