@@ -8,25 +8,29 @@ window.db.ref().on('value', (snapshot) => {
 
 function updateUISecaraRealtime() {
     try {
-        // 1. SMART DETECTION: Update teks
+        // 1. SMART DETECTION: Update teks (ANTI DOM THRASHING KHUSUS IPHONE)
         document.querySelectorAll('.editable-text').forEach(el => {
             if(el.id && window.globalData) {
                 let data = window.globalData[el.id];
                 // PENCEGAHAN CRASH: Pastikan data benar-benar teks (string) sebelum diproses
                 if(data && typeof data === 'string' && data.trim() !== '') {
-                    el.innerText = data; 
+                    // PENCEGAHAN KEDIP: Hanya timpa teks jika datanya benar-benar berubah
+                    if(el.innerText !== data) {
+                        el.innerText = data; 
+                    }
                 }
                 
                 let fontData = window.globalData['font_' + el.id];
                 if(fontData && typeof fontData === 'string' && fontData.trim() !== '') {
-                    el.style.fontFamily = fontData;
+                    // PENCEGAHAN KEDIP FONT: Hanya ubah jika font-nya berbeda
+                    if(el.style.fontFamily !== fontData) el.style.fontFamily = fontData;
                 } else {
-                    el.style.fontFamily = ""; 
+                    if(el.style.fontFamily !== "") el.style.fontFamily = ""; 
                 }
             }
         });
 
-// 2. FIX BUG IPHONE: Render Gambar dengan Smart Caching (Anti DOM Thrashing)
+        // 2. FIX BUG IPHONE: Render Gambar dengan Smart Caching (Anti DOM Thrashing)
         const imgIds = ['heroBg', 'logo1', 'logo2', 'logo3'];
         imgIds.forEach(id => {
             let imgSrc = window.globalData[id];
