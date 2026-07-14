@@ -26,7 +26,7 @@ function updateUISecaraRealtime() {
             }
         });
 
-        // 2. FIX BUG IPHONE: Render Gambar dengan Filter Ketat
+// 2. FIX BUG IPHONE: Render Gambar dengan Smart Caching (Anti DOM Thrashing)
         const imgIds = ['heroBg', 'logo1', 'logo2', 'logo3'];
         imgIds.forEach(id => {
             let imgSrc = window.globalData[id];
@@ -34,7 +34,8 @@ function updateUISecaraRealtime() {
             if(imgSrc && typeof imgSrc === 'string' && imgSrc.length > 5) {
                 if(id === 'heroBg') {
                     let heroEl = document.getElementById('heroSection');
-                    if(heroEl) {
+                    // PENCEGAHAN LOOP RENDER: Hanya pasang jika background lama belum memuat gambar baru
+                    if(heroEl && !heroEl.style.backgroundImage.includes(imgSrc)) {
                         heroEl.style.backgroundImage = `url('${imgSrc}')`;
                         heroEl.style.backgroundSize = 'cover';
                         heroEl.style.backgroundPosition = 'center';
@@ -42,7 +43,10 @@ function updateUISecaraRealtime() {
                     }
                 } else {
                     let imgEl = document.getElementById(id);
-                    if(imgEl) imgEl.src = imgSrc;
+                    // PENCEGAHAN DOM RE-PAINT: Hanya ganti src jika URL di database benar-benar berbeda
+                    if(imgEl && imgEl.src !== imgSrc) {
+                        imgEl.src = imgSrc;
+                    }
                 }
             }
         });
