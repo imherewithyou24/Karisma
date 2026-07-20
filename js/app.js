@@ -98,7 +98,7 @@ function getSafeNewsArray() {
 }
 
 // ==========================================
-// 3. MESIN ROUTING URL, HAL উভয় BACA & ARSIP
+// 3. MESIN ROUTING URL, HALAMAN BACA & ARSIP
 // ==========================================
 window.addEventListener('popstate', checkURLRouting);
 document.addEventListener('DOMContentLoaded', checkURLRouting);
@@ -111,7 +111,6 @@ function checkURLRouting() {
     const mainSections = ['heroSection', 'profil', 'kawaljanji', 'agenda', 'berita', 'repositori', 'interaktif', 'angket'];
     
     if (idBerita) {
-        // Mode Baca: Sembunyikan beranda & arsip, tampilkan halaman artikel
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
         if(document.getElementById('arsipSection')) document.getElementById('arsipSection').style.display = 'none';
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'block';
@@ -127,7 +126,6 @@ function checkURLRouting() {
             });
         }
     } else if (isArsip) {
-        // Mode Arsip Penuh
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
         if(document.getElementById('arsipSection')) {
@@ -136,7 +134,6 @@ function checkURLRouting() {
         }
         window.scrollTo(0, 0);
     } else {
-        // Mode Beranda
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'block'; });
         if(document.getElementById('heroSection')) document.getElementById('heroSection').style.display = 'flex'; 
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
@@ -164,7 +161,6 @@ function filterArsip(kategori) {
     let container = document.getElementById('arsipContainer');
     if(!container) return;
     
-    // Ubah visual tombol active
     document.querySelectorAll('#arsipSection .btn-outline-dark').forEach(btn => {
         btn.classList.remove('active');
         if(btn.innerText.trim().toLowerCase() === kategori.toLowerCase() || (kategori === 'Semua' && btn.innerText.trim() === 'Semua')) {
@@ -216,9 +212,14 @@ function renderHalamanBacaPenuh(id) {
     let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
     let readTime = Math.max(1, Math.ceil(wordCount / 200));
 
+    // TAHAP 1: METADATA PENULIS & DIVISI
+    let penulis = n.penulis || "Ahmad Hafiz Arsya"; 
+    let divisi = n.divisi || "Divisi Kastrat";
+
     if(document.getElementById('readDate')) {
         document.getElementById('readDate').innerHTML = `
-            <span class="d-block text-dark-blue fw-bold mb-1">Oleh: Divisi Kastrat HIMA Psikologi</span>
+            <span class="d-block text-dark-blue fw-bold mb-1" style="font-size: 1.1rem;">Penulis: ${penulis}</span>
+            <span class="d-block text-muted small mb-3 fw-medium">Divisi: ${divisi}</span>
             <i class="fa-regular fa-calendar me-1"></i> ${dateStr} &nbsp;•&nbsp; 
             <i class="fa-solid fa-stopwatch me-1"></i> ${readTime} menit membaca
         `;
@@ -276,6 +277,9 @@ function renderBeritaList(dataArray) {
         let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
         let readTime = Math.max(1, Math.ceil(wordCount / 200));
 
+        // TAHAP 1: METADATA PENULIS DI CARD
+        let penulis = n.penulis || "Divisi Kastrat";
+
         container.innerHTML += `
         <div class="col-12 news-card-wrapper">
             <div class="card shadow-sm border-0 hover-card rounded-4 bg-white overflow-hidden text-start mb-2" style="border: 1px solid rgba(0,0,0,0.05) !important;">
@@ -293,8 +297,8 @@ function renderBeritaList(dataArray) {
                             
                             <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top">
                                 <div>
-                                    <span class="small fw-bold text-dark-blue d-block">Penulis: Divisi Kastrat</span>
-                                    <span class="small text-muted">${dateStr} • ${readTime} menit membaca</span>
+                                    <span class="small fw-bold text-dark-blue d-block">Penulis: ${penulis}</span>
+                                    <span class="small text-muted">${dateStr} • ${readTime} menit baca</span>
                                 </div>
                                 <div class="d-flex gap-2 align-items-center">
                                     <button class="btn btn-sm btn-outline-danger admin-only shadow-sm rounded-pill px-3" style="display:${admDisp} !important;" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>
@@ -468,12 +472,7 @@ function renderPersonalDashboard(userData) {
     document.getElementById('userPoints').innerText = userData.points;
     document.getElementById('userStreak').innerText = userData.streak;
     
-    let badgeContainer = document.getElementById('badgesContainer');
-    if(!userData.badges || userData.badges.length === 0) {
-        badgeContainer.innerHTML = `<span class="badge bg-light text-muted border w-100 py-2">Belum ada pencapaian. Mulaiah berinteraksi!</span>`;
-    } else {
-        badgeContainer.innerHTML = userData.badges.map(b => `<span class="badge bg-warning text-dark-blue shadow-sm py-2 px-3"><i class="fa-solid fa-award me-1"></i> ${b}</span>`).join('');
-    }
+    // Fitur Badges Pencapaian DOM Update dihapus sesuai arahan Tahap 1.
 }
 
 function checkAndAwardBadges(uid, userData) {
