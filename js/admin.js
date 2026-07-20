@@ -1,5 +1,31 @@
 // ==========================================
-// 1. SISTEM OTORISASI & PROFIL PENGGUNA (FIREBASE REALTIME)
+// INISIALISASI MESIN STUDIO REDAKSI (QUILL.JS)
+// ==========================================
+let redaksiQuill;
+let sampulWebPBase64 = ""; // Tempat menyimpan gambar yang sudah di-crop
+let editModeBeritaId = null; // Penanda apakah sedang buat baru atau revisi
+
+document.addEventListener("DOMContentLoaded", () => {
+    if(document.getElementById('quillEditor')) {
+        redaksiQuill = new Quill('#quillEditor', {
+            theme: 'snow',
+            placeholder: 'Mulai ketik naskah kajian di sini...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'align': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'blockquote'],
+                    ['clean']
+                ]
+            }
+        });
+    }
+});
+
+// ==========================================
+// 1. SISTEM OTORISASI & PROFIL PENGGUNA
 // ==========================================
 
 const DAFTAR_ADMIN_KASTRAT = [
@@ -11,10 +37,8 @@ const DAFTAR_ADMIN_KASTRAT = [
     "2510914220054@mhs.ulm.ac.id"
 ];
 
-// Deteksi cerdas apakah pengguna memakai iPhone/iPad/Mac Safari
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-// TANGKAP HASIL REDIRECT (Wajib ada untuk Safari/iPhone)
 firebase.auth().getRedirectResult().then((result) => {
     if (result && result.user) {
         handleUserLogin(result.user, true);
@@ -23,7 +47,6 @@ firebase.auth().getRedirectResult().then((result) => {
     console.error("Error dari Redirect iOS:", error);
 });
 
-// Alarm deteksi otomatis jika user nge-refresh web
 firebase.auth().onAuthStateChanged((user) => {
     if (user) { handleUserLogin(user, false); }
 });
@@ -32,9 +55,7 @@ function loginDenganGoogle() {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-    // MESIN HYBRID LOGIN (Ide Tegar)
     if (isIOS) {
-        // JALUR IPHONE: Gunakan Redirect agar tidak kena blokir Pop-up Apple
         Swal.fire({
             title: 'Membuka Portal...',
             text: 'Mengarahkan dengan aman khusus perangkat Apple...',
@@ -43,7 +64,6 @@ function loginDenganGoogle() {
         });
         firebase.auth().signInWithRedirect(googleProvider);
     } else {
-        // JALUR LAPTOP/ANDROID: Gunakan Popup agar lebih cepat
         firebase.auth().signInWithPopup(googleProvider)
         .then((result) => {
             handleUserLogin(result.user, true);
@@ -63,7 +83,6 @@ function loginDenganGoogle() {
 }
 
 function loginDenganEmail() {
-    // TETAP VERSI ASLI (Sesuai Permintaan)
     const email = document.getElementById('emailInput').value;
     const pass = document.getElementById('passwordInput').value;
     
@@ -131,7 +150,6 @@ function handleUserLogin(user, isBaruLoginManual = false) {
 async function editTeks(elId, label) {
     const el = document.getElementById(elId);
     const currentText = el.innerText.trim();
-    // Tarik data font saat ini dari cloud jika ada
     const currentFont = window.globalData['font_' + elId] || '';
 
     const { value: formValues } = await Swal.fire({ 
@@ -155,10 +173,7 @@ async function editTeks(elId, label) {
         confirmButtonColor: '#0B192C',
         confirmButtonText: '<i class="fa-solid fa-floppy-disk me-1"></i> Simpan ke Cloud',
         preConfirm: () => {
-            return {
-                text: document.getElementById('swal-input-text').value,
-                font: document.getElementById('swal-input-font').value
-            }
+            return { text: document.getElementById('swal-input-text').value, font: document.getElementById('swal-input-font').value }
         }
     });
     
@@ -178,10 +193,7 @@ async function gantiGambar(elId, label) {
         showCancelButton: true,
         confirmButtonColor: '#0B192C'
     });
-    if(url) { 
-        window.db.ref(elId).set(url); 
-        Swal.fire({title: 'Gambar Terbarui!', icon: 'success'}); 
-    }
+    if(url) { window.db.ref(elId).set(url); Swal.fire({title: 'Gambar Terbarui!', icon: 'success'}); }
 }
 
 async function gantiTemaDewa() {
@@ -197,47 +209,229 @@ async function gantiTemaDewa() {
 }
 
 // ==========================================
-// 3. EDIT DATA INTERAKTIF & MANAJEMEN BERITA
+// 3. EDIT DATA INTERAKTIF & MANAJEMEN BERITA (HEADLESS CMS)
 // ==========================================
-async function tambahBeritaBaru() {
-    const { value: form } = await Swal.fire({ 
-        title: 'Publikasi Naskah Kajian Baru', 
-        html: '<input id="sj" class="swal2-input" placeholder="Judul Naskah Kajian"><textarea id="si" class="swal2-textarea" placeholder="Isi Artikel Lengkap Kajian Akademik..."></textarea><input id="sf" class="swal2-input" placeholder="Nama File Gambar Cover di GitHub (Contoh: cover1.jpg)">', 
-        preConfirm: () => { return { j: document.getElementById('sj').value, i: document.getElementById('si').value, f: document.getElementById('sf').value } } 
-    });
+
+// Fungsi Buka Studio Redaksi Baru
+function tambahBeritaBaru() {
+    if(window.role !== 'admin' && window.role !== 'mod') return Swal.fire('Ditolak', 'Hanya Mode Dewa yang bisa mempublikasikan!', 'error');
     
-    if (form && form.j) {
-        let imgUrl = form.f || "https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600";
-        let dbNews = window.globalData.karisma_news || [];
-        dbNews.unshift({ id: Date.now(), title: form.j, date: "Baru Saja", badge: "Breaking Issue", color: "bg-danger", img: imgUrl, short: form.i.substring(0,60)+"...", full: `<p>${form.i}</p>` });
-        await window.db.ref('karisma_news').set(dbNews); 
-        Swal.fire({title: 'Naskah Resmi Terpublikasi!', icon: 'success'});
-    }
+    editModeBeritaId = null; // Mode Bikin Naskah Baru
+    
+    document.getElementById('editJudul').value = '';
+    document.getElementById('editKategori').value = 'Kajian Akademik';
+    document.getElementById('editPenulis').value = 'Ahmad Hafiz Arsya';
+    document.getElementById('editDivisi').value = 'Kastrat';
+    
+    sampulWebPBase64 = "";
+    document.getElementById('previewCoverContainer').classList.add('d-none');
+    document.getElementById('editCoverFile').value = ''; 
+    
+    if(redaksiQuill) redaksiQuill.root.innerHTML = '';
+    
+    new bootstrap.Modal(document.getElementById('editorModal')).show();
 }
 
-async function editBeritaFull() {
-    let dbNews = window.globalData.karisma_news; 
-    let idx = dbNews.findIndex(x => x.id === window.activeNewsId);
-    const { value: f } = await Swal.fire({ 
-        title: 'Revisi Naskah Kajian', 
-        html: `<input id="ejs" class="swal2-input" value="${dbNews[idx].title}"><textarea id="eis" class="swal2-textarea" style="height:200px;">${dbNews[idx].full.replace(/<[^>]*>?/gm, '')}</textarea><input id="efile" class="swal2-input" placeholder="Ganti File Gambar Cover (Opsional)">`, 
-        preConfirm: () => { return { j: document.getElementById('ejs').value, i: document.getElementById('eis').value, f: document.getElementById('efile').value } } 
-    });
-    if(f) { 
-        if(f.f) dbNews[idx].img = f.f;
-        dbNews[idx].title = f.j; dbNews[idx].full = `<p>${f.i}</p>`; 
-        await window.db.ref('karisma_news').set(dbNews);
-        Swal.fire({title: 'Revisi Sukses Tersinkronisasi!', icon: 'success'});
+// Fungsi Edit Berita Lama pakai Studio Redaksi
+function editBeritaFull() {
+    if(window.role !== 'admin' && window.role !== 'mod') return Swal.fire('Ditolak', 'Hanya Mode Dewa!', 'error');
+    
+    let id = window.activeNewsId;
+    if(!id) return;
+    
+    // Ambil data Array yang kebal bug
+    let dbNewsRaw = window.globalData.karisma_news;
+    let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw);
+    let artikel = dbNews.find(x => x && x.id === id);
+    if(!artikel) return;
+
+    editModeBeritaId = id; // Mode Revisi Naskah
+    
+    document.getElementById('editJudul').value = artikel.title || '';
+    document.getElementById('editKategori').value = artikel.badge || 'Kajian Akademik';
+    document.getElementById('editPenulis').value = artikel.penulis || 'Ahmad Hafiz Arsya';
+    document.getElementById('editDivisi').value = artikel.divisi || 'Kastrat';
+    
+    sampulWebPBase64 = artikel.img || "";
+    if(sampulWebPBase64) {
+        document.getElementById('previewCoverImg').src = sampulWebPBase64;
+        document.getElementById('previewCoverContainer').classList.remove('d-none');
+    } else {
+        document.getElementById('previewCoverContainer').classList.add('d-none');
     }
+    
+    if(redaksiQuill) redaksiQuill.root.innerHTML = artikel.full || '';
+    
+    new bootstrap.Modal(document.getElementById('editorModal')).show();
+}
+
+// Mesin Pengolah Gambar HTML5 (Crop Otomatis & Konversi WebP)
+function prosesGambarUpload(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+
+    if(!file.type.match('image.*')) {
+        return Swal.fire('Gagal', 'Mohon pilih file gambar (JPG/PNG).', 'error');
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            // Filter Resolusi
+            if(img.width < 1600 || img.height < 900) {
+                Swal.fire({
+                    title: 'Resolusi Terlalu Kecil!',
+                    html: `Gambar ini berukuran <b>${img.width}x${img.height}px</b>.<br>Minimal yang diizinkan adalah <b>1600x900px</b> agar tajam di HP.`,
+                    icon: 'warning',
+                    confirmButtonColor: '#0B192C'
+                });
+                return; 
+            }
+
+            // Mesin Pemotong Presisi 16:9
+            const canvas = document.createElement('canvas');
+            const targetRatio = 16 / 9;
+            const imgRatio = img.width / img.height;
+            
+            let drawWidth = img.width;
+            let drawHeight = img.height;
+            let offsetX = 0;
+            let offsetY = 0;
+
+            if (imgRatio > targetRatio) {
+                drawWidth = img.height * targetRatio;
+                offsetX = (img.width - drawWidth) / 2;
+            } else {
+                drawHeight = img.width / targetRatio;
+                offsetY = (img.height - drawHeight) / 2;
+            }
+
+            canvas.width = 1280; // Standar optimal Web Modern
+            canvas.height = 720;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, canvas.width, canvas.height);
+
+            // Simpan sebagai WebP super ringan (Kualitas 80%)
+            sampulWebPBase64 = canvas.toDataURL('image/webp', 0.8);
+            
+            document.getElementById('previewCoverImg').src = sampulWebPBase64;
+            document.getElementById('previewCoverContainer').classList.remove('d-none');
+            
+            Swal.fire({title: 'Gambar Siap!', text: 'Berhasil dipotong ke 16:9 dan dioptimasi ke WebP.', icon: 'success', timer: 1500, showConfirmButton: false});
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function previewArtikel() {
+    let judul = document.getElementById('editJudul').value;
+    let isiHTML = redaksiQuill.root.innerHTML;
+    
+    if(!judul || isiHTML === '<p><br></p>') return Swal.fire('Kosong', 'Judul dan isi artikel harus diisi!', 'warning');
+    
+    Swal.fire({
+        title: 'Preview Naskah',
+        html: `<div style="text-align:left; max-height: 60vh; overflow-y:auto; line-height: 1.8;">
+                <h3 style="font-weight:bold; color:#0B192C; margin-bottom:15px;">${judul}</h3>
+                ${sampulWebPBase64 ? `<img src="${sampulWebPBase64}" style="width:100%; border-radius:10px; margin-bottom:20px;">` : ''}
+                <div style="font-size: 1.1rem;">${isiHTML}</div>
+               </div>`,
+        width: '800px',
+        confirmButtonText: 'Tutup Preview',
+        confirmButtonColor: '#0B192C'
+    });
+}
+
+function simpanArtikel() {
+    let judul = document.getElementById('editJudul').value.trim();
+    let kategori = document.getElementById('editKategori').value;
+    let penulis = document.getElementById('editPenulis').value.trim();
+    let divisi = document.getElementById('editDivisi').value.trim();
+    let isiHTML = redaksiQuill.root.innerHTML;
+    
+    if(!judul || !penulis || isiHTML === '<p><br></p>') {
+        return Swal.fire('Lengkapi Data', 'Pastikan Judul, Penulis, dan Isi Naskah tidak kosong.', 'warning');
+    }
+    
+    if(!sampulWebPBase64) {
+        return Swal.fire('Cover Wajib', 'Silakan upload gambar resolusi tinggi terlebih dahulu.', 'warning');
+    }
+
+    let teksMurni = redaksiQuill.getText().trim();
+    let ringkasan = teksMurni.substring(0, 150) + "...";
+
+    Swal.fire({
+        title: editModeBeritaId ? 'Simpan Perubahan?' : 'Publikasikan Sekarang?',
+        text: editModeBeritaId ? "Naskah yang direvisi akan segera tayang." : "Kajian ini akan disebarkan ke publik.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: editModeBeritaId ? 'Ya, Simpan!' : 'Ya, Publikasikan!',
+        confirmButtonColor: '#198754'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.db.ref('karisma_news').once('value').then(snap => {
+                let dbNewsRaw = snap.val();
+                let dbNews = [];
+                if(dbNewsRaw) {
+                    dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw);
+                    dbNews = dbNews.filter(n => n !== null && n !== undefined && n.id !== undefined);
+                }
+                
+                if (editModeBeritaId) {
+                    let idx = dbNews.findIndex(x => x.id === editModeBeritaId);
+                    if(idx > -1) {
+                        dbNews[idx].title = judul;
+                        dbNews[idx].badge = kategori;
+                        dbNews[idx].penulis = penulis;
+                        dbNews[idx].divisi = divisi;
+                        dbNews[idx].img = sampulWebPBase64;
+                        dbNews[idx].short = ringkasan;
+                        dbNews[idx].full = isiHTML;
+                        
+                        let d = new Date();
+                        dbNews[idx].date = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()} (Revisi)`;
+                    }
+                } else {
+                    let newId = Date.now();
+                    let d = new Date();
+                    let dateString = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
+                    let timeString = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
+
+                    let artikelBaru = {
+                        id: newId, title: judul, badge: kategori, penulis: penulis, divisi: divisi,
+                        img: sampulWebPBase64, short: ringkasan, full: isiHTML, date: dateString, time: timeString
+                    };
+                    dbNews.unshift(artikelBaru); 
+                }
+                
+                window.db.ref('karisma_news').set(dbNews).then(() => {
+                    let modalEl = document.getElementById('editorModal');
+                    let modalIns = bootstrap.Modal.getInstance(modalEl);
+                    if(modalIns) modalIns.hide();
+                    
+                    Swal.fire('Berhasil!', editModeBeritaId ? 'Revisi sukses tersinkronisasi.' : 'Kajian resmi mengudara.', 'success').then(() => {
+                        if (editModeBeritaId && typeof renderHalamanBacaPenuh === 'function') {
+                            renderHalamanBacaPenuh(editModeBeritaId); 
+                        }
+                    });
+                });
+            });
+        }
+    });
 }
 
 function hapusBerita(id) {
     Swal.fire({title: 'Hapus paksa naskah kajian ini?', text: 'Data arsip yang dihapus tidak bisa dikembalikan!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'}).then(r => {
         if(r.isConfirmed){ 
-            let dbNews = window.globalData.karisma_news; 
-            dbNews = dbNews.filter(x => x.id !== id); 
-            window.db.ref('karisma_news').set(dbNews); 
-            Swal.fire({title: 'Terhapus!', icon: 'success'});
+            window.db.ref('karisma_news').once('value').then(snap => {
+                let dbNewsRaw = snap.val();
+                let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw);
+                dbNews = dbNews.filter(x => x && x.id !== id); 
+                window.db.ref('karisma_news').set(dbNews); 
+                Swal.fire({title: 'Terhapus!', icon: 'success'});
+            });
         }
     });
 }
@@ -336,8 +530,6 @@ async function tambahDokumen(){
     }); 
     if(f && f[0]){ 
         let d = window.globalData.karisma_repo || []; 
-        
-        // Buat format tanggal otomatis ala Indonesia
         const today = new Date();
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const formattedDate = today.toLocaleDateString('id-ID', options);
@@ -370,10 +562,6 @@ async function ubahLink(t) {
         window.db.ref('karisma_links').set(c); 
         Swal.fire({title: 'Link Form Sinkron!', icon: 'success'});
     }
-}
-
-function exportDataCSV(tipe) {
-    Swal.fire({title: 'Ekstraksi Arsip', text: `Berhasil menarik laporan data mentah ${tipe} langsung dari server Singapore!`, icon: 'success'});
 }
 
 // ==========================================
@@ -429,17 +617,11 @@ async function editDailyDewa() {
     });
     
     if (f && f.q) {
-        // Acak urutan jawaban secara otomatis agar yang benar (index 0) tidak selalu di pilihan A
         let optsAcak = [...f.opts].sort(() => Math.random() - 0.5);
-        let indexBenar = optsAcak.indexOf(f.opts[0]); // Cari di mana jawaban benarnya bersembunyi
+        let indexBenar = optsAcak.indexOf(f.opts[0]); 
 
         let newData = {
-            date: today,
-            title: "Tantangan Kritis",
-            q: f.q,
-            opts: optsAcak,
-            ans: indexBenar,
-            exp: f.exp
+            date: today, title: "Tantangan Kritis", q: f.q, opts: optsAcak, ans: indexBenar, exp: f.exp
         };
         await window.db.ref('karisma_daily').set(newData); 
         Swal.fire({title: 'Tantangan Mengudara!', text: 'Mahasiswa kini bisa menjawab tantangan baru Anda.', icon: 'success'});
