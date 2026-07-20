@@ -277,3 +277,44 @@ body.admin-mode .editable-text:hover {
 html {
     -webkit-text-size-adjust: 100%;
 }
+/* ========================================= */
+/* UI/UX READING EXPERIENCE (PORTAL BERITA)  */
+/* ========================================= */
+.article-container { 
+    max-width: 760px; 
+    margin: 0 auto; 
+}
+.article-header-img { 
+    width: 100%; 
+    aspect-ratio: 16/9; 
+    object-fit: cover; 
+    border-radius: 12px; 
+    margin-bottom: 2rem; 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+.article-content { 
+    font-size: 18px; 
+    line-height: 1.8; 
+    color: #2c3e50; 
+}
+.article-content p { 
+    margin-bottom: 1.5rem; 
+    text-align: left;
+}
+.dark-mode .article-content { color: #e0e0e0; }
+
+.related-news-card { 
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    border: 1px solid #eee;
+}
+.related-news-card:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+    border-color: var(--accent-gold);
+}
+.dark-mode .related-news-card { border-color: #333; }
