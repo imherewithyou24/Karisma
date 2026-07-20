@@ -88,13 +88,20 @@ if(!sessionStorage.getItem('visited')) {
 }
 
 // ==========================================
-// VAKSIN ANTI-CRASH FIREBASE (ARRAY CONVERTER)
+// VAKSIN ANTI-CRASH FIREBASE (ARRAY CONVERTER) & SENSOR DRAFT
 // ==========================================
 function getSafeNewsArray() {
     let raw = window.globalData.karisma_news;
     if (!raw) return [];
     let arr = Array.isArray(raw) ? raw : Object.values(raw);
-    return arr.filter(n => n !== null && n !== undefined && n.id !== undefined);
+    let aman = arr.filter(n => n !== null && n !== undefined && n.id !== undefined);
+    
+    // Publik hanya melihat yang berstatus Publish (atau data lama yang tidak ada statusnya)
+    if(window.role !== 'admin' && window.role !== 'mod') {
+        return aman.filter(n => n.status === 'Publish' || !n.status);
+    }
+    // Admin & Mod melihat semuanya (termasuk Draft)
+    return aman;
 }
 
 // ==========================================
