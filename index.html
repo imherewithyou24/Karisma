@@ -46,17 +46,19 @@
 </head>
 <body id="mainBody">
 
-   <div class="news-ticker" style="display: flex; align-items: center;">
-        <span style="z-index: 2; position: relative;">HOT ISSUE</span>
+    <!-- HOT ISSUE TICKER MODERN (Desain Clean) -->
+    <div class="d-flex align-items-center shadow-sm position-relative overflow-hidden" style="height: 45px; background-color: #ffffff; border-bottom: 1px solid #eaeaea;">
+        <div class="d-flex align-items-center bg-danger text-white px-3 px-md-4 h-100 fw-bold shadow-sm" style="z-index: 2; border-radius: 0 15px 15px 0; letter-spacing: 0.5px;">
+            <i class="fa-solid fa-fire me-2"></i> <span class="d-none d-md-inline">HOT ISSUE</span>
+        </div>
         
-        <!-- PENGGANTI MARQUEE YANG RUSAK DI IPHONE -->
-        <div class="marquee-container">
-            <div class="marquee-content mb-0 editable-text" id="teksMarquee">
+        <div class="marquee-container flex-grow-1 mx-3" style="height: 100%; display: flex; align-items: center;">
+            <div class="marquee-content editable-text text-dark fw-medium m-0" id="teksMarquee" style="font-size: 0.95rem;">
                 Memuat isu terkini dari Cloud Database Kastrat...
             </div>
         </div>
         
-        <button class="btn btn-sm btn-light ms-2 admin-only" style="z-index: 2; position: relative;" onclick="editTeks('teksMarquee', 'Running Text Berita', true)"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-sm btn-outline-danger admin-only me-2 shadow-sm bg-white" style="z-index: 2;" onclick="editTeks('teksMarquee', 'Running Text Berita', true)"><i class="fa-solid fa-pen"></i></button>
     </div>
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
@@ -65,12 +67,12 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav align-items-center">
-                    <li class="nav-item"><a class="nav-link active" href="#">Beranda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#kawaljanji">Kawal Janji</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#agenda">Agenda</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#berita">Kajian</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#repositori">Perpustakaan</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#interaktif">Interaktif</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="javascript:void(0)" onclick="kembaliKeBeranda()">Beranda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#kawaljanji" onclick="kembaliKeBeranda()">Kawal Janji</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#agenda" onclick="kembaliKeBeranda()">Agenda</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#berita" onclick="kembaliKeBeranda()">Kajian</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#repositori" onclick="kembaliKeBeranda()">Perpustakaan</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#interaktif" onclick="kembaliKeBeranda()">Interaktif</a></li>
                     <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
                         <button class="btn btn-outline-primary rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#loginModal" id="loginBtnText">
                             <i class="fa-solid fa-right-to-bracket me-1"></i> Portal
@@ -80,6 +82,53 @@
             </div>
         </div>
     </nav>
+
+    <!-- RUANGAN HALAMAN BACA BERITA (Disembunyikan secara default, dikontrol oleh app.js via URL) -->
+    <section id="readingSection" class="py-5 bg-white" style="display: none; min-height: 80vh;">
+        <div class="container py-4">
+            <button class="btn btn-outline-secondary rounded-pill mb-4 shadow-sm" onclick="kembaliKeBeranda()">
+                <i class="fa-solid fa-arrow-left me-2"></i> Kembali ke Beranda
+            </button>
+            
+            <div class="article-container" style="max-width: 760px; margin: 0 auto;">
+                <span id="readBadge" class="badge mb-3 fs-6"></span>
+                <h1 id="readTitle" class="fw-bold mb-3 text-dark-blue" style="font-size: 2.5rem; line-height: 1.3;"></h1>
+                
+                <div class="d-flex align-items-center gap-3 mb-4 text-muted border-bottom pb-3">
+                    <img id="readAuthorImg" src="https://ui-avatars.com/api/?name=Kastrat&background=0B192C&color=FFC107" class="rounded-circle" width="45" height="45">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-dark-blue">Divisi Kastrat HIMA</h6>
+                        <small id="readDate"><i class="fa-regular fa-clock me-1"></i> Sedang memuat waktu...</small>
+                    </div>
+                    <div class="ms-auto d-flex gap-2">
+                        <button class="btn btn-success rounded-pill px-3 shadow-sm" onclick="shareTo('whatsapp')"><i class="fa-brands fa-whatsapp"></i></button>
+                        <button class="btn btn-warning admin-only shadow-sm rounded-pill px-3 fw-bold" onclick="editBeritaFull()"><i class="fa-solid fa-pen me-1"></i> Edit Naskah</button>
+                    </div>
+                </div>
+
+                <img id="readImg" src="" class="article-header-img w-100 rounded-4 mb-4 shadow-sm" style="aspect-ratio: 16/9; object-fit: cover;">
+                
+                <div id="readContent" class="article-content mb-5" style="font-size: 18px; line-height: 1.8; color: #2c3e50; text-align: justify;"></div>
+                
+                <!-- RUANG DISKUSI -->
+                <div class="bg-light p-4 p-md-5 rounded-4 mt-5 border shadow-sm">
+                    <h4 class="fw-bold mb-4 text-dark-blue"><i class="fa-regular fa-comments me-2 text-primary"></i>Ruang Diskusi Publik</h4>
+                    <div id="commentList" class="mb-4"></div>
+                    <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                        <input type="text" id="namaKomentator" class="form-control border-0 bg-white py-3 ps-4" placeholder="Nama Anda..." style="max-width: 150px;">
+                        <input type="text" id="isiKomentar" class="form-control border-0 bg-white border-start py-3" placeholder="Tulis gagasan atau pandanganmu...">
+                        <button class="btn btn-primary bg-dark-blue border-0 px-4" onclick="tambahKomentar()"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BERITA TERKAIT -->
+            <div class="mt-5 pt-5 border-top">
+                <h4 class="fw-bold text-dark-blue mb-4 text-center">Rekomendasi Kajian Lainnya</h4>
+                <div class="row justify-content-center g-4" id="relatedNewsContainer"></div>
+            </div>
+        </div>
+    </section>
 
     <section id="adminDashboard" class="bg-dark-blue py-4 admin-only w-100 shadow-sm border-bottom border-warning border-3" style="display: none !important;">
         <div class="container">
@@ -172,7 +221,7 @@
         <div class="container py-4">
             <div class="text-center mb-4">
                 <h2 id="judulBerita" class="fw-bold text-dark-blue d-inline-block border-bottom border-4 border-warning pb-2 editable-text">KAWAL ISU POLITIK (HOT TOPIK)</h2>
-                <p id="subBerita" class="text-muted mt-2 editable-text"><i class="fa-solid fa-clock-rotate-left me-2"></i>Pusat arsip naskah kajian Kastrat (Rotasi per jam).</p>
+                <p id="subBerita" class="text-muted mt-2 editable-text"><i class="fa-solid fa-clock-rotate-left me-2"></i>Pusat arsip naskah kajian Kastrat.</p>
             </div>
             
             <div class="row justify-content-center mb-5">
@@ -182,10 +231,10 @@
                         <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Cari isu, judul, atau kata kunci..." onkeyup="cariBerita()">
                         <button class="btn btn-primary bg-dark-blue px-4 fw-bold" onclick="cariBerita()">Cari</button>
                     </div>
-                    <button class="btn btn-sm btn-success admin-only d-block mx-auto mt-3 shadow" onclick="tambahBeritaBaru()"><i class="fa-solid fa-plus"></i> Tambah Kajian Baru</button>
+                    <button class="btn btn-success admin-only d-block mx-auto mt-4 shadow rounded-pill px-4 fw-bold" onclick="tambahBeritaBaru()"><i class="fa-solid fa-plus me-2"></i> Publikasi Kajian Baru</button>
                 </div>
             </div>
-            <div class="row g-4" id="dynamicNewsContainer"></div>
+            <div class="row justify-content-center" id="dynamicNewsContainer"></div>
         </div>
     </section>
 
@@ -283,7 +332,7 @@
                             <i class="fa-solid fa-lock text-muted fs-1 mb-3"></i>
                             <h6 class="fw-bold text-dark-blue">Portal Terkunci</h6>
                             <p class="small text-muted mb-3 px-3">Login menggunakan email universitas/pribadi untuk merekam poin dan prestasimu.</p>
-                            <button class="btn btn-dark-blue rounded-pill fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#loginModal">Masuk Sistem</button>
+                            <button class="btn btn-dark-blue rounded-pill fw-bold shadow-sm px-4 py-2" data-bs-toggle="modal" data-bs-target="#loginModal">Masuk Sistem</button>
                         </div>
 
                         <div id="userProfileGami">
@@ -396,39 +445,7 @@
         <a href="https://wa.me/628311824282?text=Halo..." target="_blank" class="btn-float bg-wa shadow wa-pulse position-relative"><i class="fa-brands fa-whatsapp fs-3"></i></a>
     </div>
 
-    <div class="modal fade" id="newsReaderModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-          <div class="modal-header border-0 pb-0 position-relative">
-            <button type="button" class="btn-close position-absolute top-0 end-0 m-3 bg-white shadow-sm rounded-circle p-2" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body p-0">
-            <img id="modalNewsImg" src="" class="img-fluid w-100" style="max-height: 400px; object-fit: cover;">
-            <div class="p-4 p-md-5">
-                <span id="modalNewsBadge" class="badge mb-3 fs-6"></span>
-                <h2 id="modalNewsTitle" class="fw-bold mb-3 text-dark-blue"></h2>
-                <div class="d-flex gap-2 mb-4">
-                    <button class="btn btn-sm btn-success rounded-pill px-3" onclick="shareTo('whatsapp')"><i class="fa-brands fa-whatsapp me-1"></i> Bagikan</button>
-                    <button class="btn btn-sm btn-warning ms-auto admin-only" onclick="editBeritaFull()"><i class="fa-solid fa-pen"></i> Edit Teks Berita</button>
-                </div>
-                <hr class="border-warning border-2 opacity-50 mb-4" style="width: 100px;">
-                <div id="modalNewsContent" class="fs-5 mb-5" style="line-height: 1.8; text-align: justify;"></div>
-                
-                <div class="bg-light p-4 rounded-4 mt-5 dark-mode-fix">
-                    <h4 class="fw-bold mb-4 text-dark-blue"><i class="fa-regular fa-comments me-2 text-primary"></i>Ruang Diskusi Publik</h4>
-                    <div id="commentList" class="mb-4"></div>
-                    <div class="input-group">
-                        <input type="text" id="namaKomentator" class="form-control" placeholder="Nama..." style="max-width: 150px;">
-                        <input type="text" id="isiKomentar" class="form-control" placeholder="Tulis pandanganmu...">
-                        <button class="btn btn-primary bg-dark-blue" onclick="tambahKomentar()"><i class="fa-solid fa-paper-plane"></i></button>
-                    </div>
-                </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    <!-- MODAL KOTAK MASUK TETAP ADA -->
     <div class="modal fade" id="inboxModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable modal-lg">
           <div class="modal-content rounded-4 border-0 shadow-lg">
@@ -438,6 +455,7 @@
         </div>
     </div>
 
+    <!-- MODAL LOGIN TETAP ADA -->
     <div class="modal fade" id="loginModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
@@ -474,8 +492,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/firebase.js?v=smart1"></script>
-    <script src="js/app.js?v=smart1"></script>
-    <script src="js/admin.js?v=smart1"></script>
+    <script src="js/firebase.js?v=portal1"></script>
+    <script src="js/app.js?v=portal1"></script>
+    <script src="js/admin.js?v=portal1"></script>
 </body>
 </html>
