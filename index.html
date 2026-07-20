@@ -147,19 +147,54 @@
         </div>
     </section>
 
-    <section id="adminDashboard" class="bg-dark-blue py-4 admin-only w-100 shadow-sm border-bottom border-warning border-3" style="display: none !important;">
+    <!-- DASHBOARD ADMIN & CMS MANAJEMEN KONTEN -->
+    <section id="adminDashboard" class="bg-dark-blue py-5 admin-only w-100 shadow-sm border-bottom border-warning border-3" style="display: none !important;">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-                <h4 class="text-white fw-bold m-0"><i class="fa-solid fa-cloud text-success me-2"></i>Cloud Dashboard</h4>
-                <div class="d-flex gap-2 mt-2 mt-md-0">
-                    <button class="btn btn-warning fw-bold" onclick="bukaInbox()"><i class="fa-solid fa-envelope me-1"></i> Cek Kotak Masuk</button>
-                    <button class="btn btn-danger fw-bold mod-only" onclick="gantiTemaDewa()"><i class="fa-solid fa-paint-roller me-1"></i> Ubah Warna Tema</button>
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                <h3 class="text-white fw-bold m-0"><i class="fa-solid fa-server text-success me-2"></i>Dashboard Redaksi</h3>
+                <div class="d-flex gap-2 mt-3 mt-md-0">
+                    <button class="btn btn-warning fw-bold shadow-sm" onclick="bukaInbox()"><i class="fa-solid fa-envelope me-1"></i> Kotak Masuk</button>
+                    <button class="btn btn-danger fw-bold mod-only shadow-sm" onclick="gantiTemaDewa()"><i class="fa-solid fa-paint-roller me-1"></i> Tema Web</button>
                 </div>
             </div>
-            <div class="row g-3">
-                <div class="col-md-4"><div class="card bg-white border-0 rounded-3 p-3 shadow-sm d-flex flex-row align-items-center"><i class="fa-solid fa-users fa-3x text-primary me-3"></i><div><h6 class="text-muted mb-1">Pengunjung (Real-time)</h6><h3 class="fw-bold mb-0 text-dark-blue" id="statVisitor">Loading...</h3></div></div></div>
-                <div class="col-md-4"><div class="card bg-white border-0 rounded-3 p-3 shadow-sm d-flex flex-row align-items-center"><i class="fa-solid fa-bolt fa-3x text-success me-3"></i><div><h6 class="text-muted mb-1">Status Server</h6><h3 class="fw-bold mb-0 text-success">Online</h3></div></div></div>
-                <div class="col-md-4"><div class="card bg-white border-0 rounded-3 p-3 shadow-sm d-flex flex-row align-items-center"><i class="fa-solid fa-envelope-open-text fa-3x text-danger me-3"></i><div><h6 class="text-muted mb-1">Pesan Inbox</h6><h3 class="fw-bold mb-0 text-dark-blue" id="statInbox">0</h3></div></div></div>
+
+            <!-- Tabel Manajemen Konten (CMS) -->
+            <div class="bg-white rounded-4 shadow-lg p-4 p-md-5 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                    <h5 class="fw-bold text-dark-blue m-0"><i class="fa-solid fa-folder-open text-warning me-2"></i>Manajemen Artikel Kajian</h5>
+                    <div class="d-flex gap-2">
+                        <select id="cmsFilterStatus" class="form-select form-select-sm border-secondary w-auto" onchange="renderCMSDashboard()">
+                            <option value="Semua">Semua Status</option>
+                            <option value="Publish">Dipublikasikan</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Arsip">Diarsipkan</option>
+                        </select>
+                        <button class="btn btn-sm btn-dark-blue fw-bold rounded-pill px-3" onclick="tambahBeritaBaru()"><i class="fa-solid fa-plus me-1"></i> Tulis Baru</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light text-muted small">
+                            <tr>
+                                <th style="width: 35%;">Judul Kajian</th>
+                                <th>Kategori</th>
+                                <th>Penulis</th>
+                                <th>Tanggal & Revisi</th>
+                                <th>Status</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cmsTableBody">
+                            <tr><td colspan="6" class="text-center py-4 text-muted"><i class="fa-solid fa-spinner fa-spin me-2"></i>Memuat data redaksi...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="row g-3 mt-2">
+                <div class="col-md-6"><div class="card bg-white border-0 rounded-3 p-3 shadow-sm d-flex flex-row align-items-center"><i class="fa-solid fa-users fa-3x text-primary me-3"></i><div><h6 class="text-muted mb-1">Pengunjung (Real-time)</h6><h3 class="fw-bold mb-0 text-dark-blue" id="statVisitor">Loading...</h3></div></div></div>
+                <div class="col-md-6"><div class="card bg-white border-0 rounded-3 p-3 shadow-sm d-flex flex-row align-items-center"><i class="fa-solid fa-envelope-open-text fa-3x text-danger me-3"></i><div><h6 class="text-muted mb-1">Pesan Inbox</h6><h3 class="fw-bold mb-0 text-dark-blue" id="statInbox">0</h3></div></div></div>
             </div>
         </div>
     </section>
@@ -376,6 +411,13 @@
                         </div>
                     </div>
 
+                    <div class="modern-card p-4 bg-white">
+                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-trophy text-warning me-2"></i>Peringkat Aktivis</h6>
+                        <div class="d-flex flex-column gap-3" id="leaderboardContainer">
+                            <p class="text-muted small text-center my-3">Belum ada mahasiswa yang memperoleh poin minggu ini.</p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -555,17 +597,20 @@
                     </div>
 
                 </div>
-                <div class="modal-footer bg-white border-top-0 py-3">
-                    <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="previewArtikel()">👁️ Preview Naskah</button>
-                    <button type="button" class="btn btn-success rounded-pill fw-bold px-5" onclick="simpanArtikel()"><i class="fa-solid fa-paper-plane me-2"></i> Publikasikan</button>
+                <div class="modal-footer bg-white border-top-0 py-3 d-flex justify-content-between align-items-center w-100">
+                    <div id="draftStatus" class="small text-muted fst-italic"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Auto-save aktif...</div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="simpanArtikel('Draft')"><i class="fa-solid fa-box-archive me-1"></i> Simpan Draft</button>
+                        <button type="button" class="btn btn-success rounded-pill fw-bold px-4" onclick="simpanArtikel('Publish')"><i class="fa-solid fa-paper-plane me-1"></i> Publikasikan</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/firebase.js?v=portal2"></script>
-    <script src="js/app.js?v=portal2"></script>
-    <script src="js/admin.js?v=portal2"></script>
+    <script src="js/firebase.js?v=cms3"></script>
+    <script src="js/app.js?v=cms3"></script>
+    <script src="js/admin.js?v=cms3"></script>
 </body>
 </html>
