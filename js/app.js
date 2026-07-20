@@ -457,9 +457,8 @@ function jawabDaily(idxSelected, idxBenar, exp, dateKey) {
     document.getElementById('dailyOptionsContainer').style.display = 'none';
 }
 
-// --- 5.3 LEADERBOARD REALTIME ---
+// --- 5.3 LEADERBOARD REALTIME (SMART LIMIT) ---
 function renderLeaderboard() {
-    // Tarik data users, ubah ke array, urutkan berdasarkan poin terbesar
     let usersData = window.globalData.karisma_users;
     let lbContainer = document.getElementById('leaderboardContainer');
     if(!lbContainer) return;
@@ -469,19 +468,22 @@ function renderLeaderboard() {
         return;
     }
 
-    let usersArray = Object.values(usersData).filter(u => u.points > 0).sort((a, b) => b.points - a.points).slice(0, 10);
+    // Tarik batas limit dari database, jika tidak ada, gunakan 3 sebagai standar estetika
+    let limit = window.globalData.karisma_leaderboard_limit || 3;
+    let usersArray = Object.values(usersData).filter(u => u.points > 0).sort((a, b) => b.points - a.points).slice(0, limit);
     
     if(usersArray.length === 0) {
         lbContainer.innerHTML = `<p class="text-muted small text-center my-3">Belum ada mahasiswa yang memperoleh poin minggu ini.</p>`;
         return;
     }
 
-    lbContainer.innerHTML = usersArray.map((u, i) => {
+    // Render daftar peringkat
+    let htmlContent = usersArray.map((u, i) => {
         let badgeStyle = i === 0 ? 'bg-warning text-dark' : (i === 1 ? 'bg-secondary text-white' : (i === 2 ? 'bg-danger text-white' : 'bg-light text-muted border'));
         let shortName = u.nama.split(' ')[0];
         
         return `
-        <div class="d-flex align-items-center justify-content-between p-2 rounded-3 hover-card">
+        <div class="d-flex align-items-center justify-content-between p-2 mb-2 rounded-3 hover-card" style="background: #ffffff; border: 1px solid #f8f9fa;">
             <div class="d-flex align-items-center gap-3">
                 <span class="fw-bold ${i < 3 ? 'text-dark-blue fs-5' : 'text-muted'}">${i + 1}</span>
                 <img src="${u.foto || 'https://via.placeholder.com/150'}" class="rounded-circle border" style="width:35px; height:35px; object-fit:cover;">
@@ -493,6 +495,30 @@ function renderLeaderboard() {
             <span class="badge ${badgeStyle} rounded-pill px-3 py-2 shadow-sm">${u.points} Pts</span>
         </div>`;
     }).join('');
+
+    // Pasang tombol pengaturan khusus Admin di bawah leaderboard
+    if(window.role === 'mod') {
+        htmlContent += `<button class="btn btn-sm btn-outline-secondary w-100 mt-2 admin-only" onclick="editLimitLeaderboard()"><i class="fa-solid fa-gear me-1"></i>Atur Batas Peringkat</button>`;
+    }
+
+    lbContainer.innerHTML = htmlContent;
+}
+
+// Fungsi Engine untuk Admin Mengubah Limit
+async function editLimitLeaderboard() {
+    const { value: limit } = await Swal.fire({
+        title: 'Pengaturan Leaderboard',
+        input: 'number',
+        inputLabel: 'Jumlah maksimal peringkat yang ditampilkan di halaman utama:',
+        inputValue: window.globalData.karisma_leaderboard_limit || 3,
+        showCancelButton: true,
+        confirmButtonColor: '#0B192C'
+    });
+    
+    if (limit && parseInt(limit) > 0) {
+        window.db.ref('karisma_leaderboard_limit').set(parseInt(limit));
+        Swal.fire({title: 'Tersimpan', text: 'Batas tampilan leaderboard berhasil diperbarui.', icon: 'success', timer: 1500, showConfirmButton: false});
+    }
 }
 
 // ==========================================
