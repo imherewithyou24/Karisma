@@ -129,21 +129,22 @@
         </div>
     </section>
 
-    <!-- HALAMAN ARSIP PENUH -->
+    <!-- HALAMAN ARSIP PENUH (TAHAP 1: Filter Dinamis & Layout Horizontal) -->
     <section id="arsipSection" class="py-5 bg-light" style="display: none; min-height: 80vh;">
         <div class="container py-4">
             <button class="btn btn-outline-secondary rounded-pill mb-4" onclick="kembaliKeBeranda()"><i class="fa-solid fa-arrow-left me-2"></i> Kembali ke Beranda</button>
             <h2 class="fw-bold text-dark-blue mb-4">Arsip Seluruh Kajian</h2>
             
-            <div class="d-flex gap-2 flex-wrap mb-4">
-                <span class="text-muted fw-bold me-2 align-self-center"><i class="fa-solid fa-filter"></i> Filter:</span>
-                <button class="btn btn-sm btn-outline-dark rounded-pill active" onclick="filterArsip('Semua')">Semua</button>
-                <button class="btn btn-sm btn-outline-dark rounded-pill" onclick="filterArsip('Kampus')">Kampus</button>
-                <button class="btn btn-sm btn-outline-dark rounded-pill" onclick="filterArsip('Nasional')">Nasional</button>
-                <button class="btn btn-sm btn-outline-dark rounded-pill" onclick="filterArsip('Psikologi')">Psikologi</button>
+            <div class="d-flex align-items-center mb-4 flex-wrap">
+                <span class="text-muted fw-bold me-3 mb-2 mb-md-0"><i class="fa-solid fa-filter"></i> Kategori:</span>
+                <!-- Wadah Filter Dinamis -->
+                <div class="d-flex gap-2 flex-wrap" id="dynamicArsipFilters">
+                    <!-- Filter akan di-generate oleh JS app.js -->
+                </div>
             </div>
             
-            <div class="row g-4" id="arsipContainer"></div>
+            <!-- Row g-0 agar card full width (Horizontal) -->
+            <div class="row g-0" id="arsipContainer"></div>
         </div>
     </section>
 
@@ -538,7 +539,7 @@
       </div>
     </div>
 
-    <!-- MODAL STUDIO REDAKSI (RICH TEXT EDITOR) -->
+    <!-- MODAL STUDIO REDAKSI (TAHAP 1: TEKS GAMBAR DIUBAH) -->
     <div class="modal fade" id="editorModal" data-bs-backdrop="static" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content rounded-4 border-0 shadow-lg">
@@ -576,12 +577,12 @@
                         </div>
                     </div>
 
-                    <!-- THUMBNAIL UPLOADER (AUTO CROP & WEBP) -->
+                    <!-- THUMBNAIL UPLOADER -->
                     <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">2. Cover / Thumbnail (Otomatis 16:9)</h6>
                     <div class="mb-5 bg-white p-4 rounded-4 shadow-sm border text-center position-relative">
                         <input type="file" id="editCoverFile" class="form-control d-none" accept="image/*" onchange="prosesGambarUpload(event)">
-                        <button class="btn btn-outline-primary rounded-pill px-4 fw-bold mb-3" onclick="document.getElementById('editCoverFile').click()"><i class="fa-solid fa-upload me-2"></i>Pilih Gambar Beresolusi Tinggi</button>
-                        <p class="small text-muted mb-3">Minimal resolusi: 1600 x 900 px. Akan dikonversi otomatis ke WebP.</p>
+                        <button class="btn btn-outline-primary rounded-pill px-4 fw-bold mb-3" onclick="document.getElementById('editCoverFile').click()"><i class="fa-solid fa-upload me-2"></i>Pilih Gambar Cover</button>
+                        <p class="small text-muted mb-3">Resolusi bebas. Sistem akan otomatis memotong (crop) menjadi 16:9 dan mengoptimasi ukurannya ke format WebP.</p>
                         
                         <div id="previewCoverContainer" class="d-none">
                             <hr>
@@ -609,8 +610,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/firebase.js?v=cms3"></script>
-    <script src="js/app.js?v=cms3"></script>
-    <script src="js/admin.js?v=cms3"></script>
+    <script src="js/firebase.js?v=tahap1"></script>
+    <script src="js/app.js?v=tahap1"></script>
+    <script src="js/admin.js?v=tahap1"></script>
 </body>
 </html>
