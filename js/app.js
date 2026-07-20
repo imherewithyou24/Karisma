@@ -88,7 +88,7 @@ if(!sessionStorage.getItem('visited')) {
 }
 
 // ==========================================
-// 3. MESIN ROUTING URL & HALAMAN BACA
+// 3. MESIN ROUTING URL, HALAMAN BACA & ARSIP
 // ==========================================
 window.addEventListener('popstate', checkURLRouting);
 document.addEventListener('DOMContentLoaded', checkURLRouting);
@@ -96,30 +96,41 @@ document.addEventListener('DOMContentLoaded', checkURLRouting);
 function checkURLRouting() {
     const urlParams = new URLSearchParams(window.location.search);
     const idBerita = urlParams.get('berita');
+    const isArsip = urlParams.get('arsip');
     
     const mainSections = ['heroSection', 'profil', 'kawaljanji', 'agenda', 'berita', 'repositori', 'interaktif', 'angket'];
     
     if (idBerita) {
-        // Mode Baca: Sembunyikan beranda, tampilkan halaman artikel
+        // Mode Baca: Sembunyikan beranda & arsip, tampilkan halaman artikel
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+        if(document.getElementById('arsipSection')) document.getElementById('arsipSection').style.display = 'none';
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'block';
         window.scrollTo(0, 0);
         
         if (window.globalData && window.globalData.karisma_news) {
             renderHalamanBacaPenuh(parseInt(idBerita));
         } else {
-            // Pancing Firebase jika langsung direct link
             window.db.ref('karisma_news').once('value').then(snap => {
                 if(!window.globalData) window.globalData = {};
                 window.globalData.karisma_news = snap.val();
                 renderHalamanBacaPenuh(parseInt(idBerita));
             });
         }
+    } else if (isArsip) {
+        // Mode Arsip Penuh
+        mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+        if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
+        if(document.getElementById('arsipSection')) {
+            document.getElementById('arsipSection').style.display = 'block';
+            filterArsip('Semua'); 
+        }
+        window.scrollTo(0, 0);
     } else {
-        // Mode Beranda: Sembunyikan artikel, tampilkan beranda
+        // Mode Beranda
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'block'; });
         if(document.getElementById('heroSection')) document.getElementById('heroSection').style.display = 'flex'; 
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
+        if(document.getElementById('arsipSection')) document.getElementById('arsipSection').style.display = 'none';
     }
 }
 
@@ -128,9 +139,52 @@ function bukaBacaBerita(id) {
     checkURLRouting();
 }
 
+function bukaArsipPenuh() {
+    window.history.pushState({}, '', '?arsip=true');
+    checkURLRouting();
+}
+
 function kembaliKeBeranda() {
     window.history.pushState({}, '', window.location.pathname);
     checkURLRouting();
+}
+
+function filterArsip(kategori) {
+    let dbNews = window.globalData.karisma_news || [];
+    let container = document.getElementById('arsipContainer');
+    if(!container) return;
+    
+    // Ubah visual tombol active
+    document.querySelectorAll('#arsipSection .btn-outline-dark').forEach(btn => {
+        btn.classList.remove('active');
+        if(btn.innerText.trim().toLowerCase() === kategori.toLowerCase() || (kategori === 'Semua' && btn.innerText.trim() === 'Semua')) {
+            btn.classList.add('active');
+        }
+    });
+
+    let filtered = kategori === 'Semua' ? dbNews : dbNews.filter(n => n.badge && n.badge.toLowerCase().includes(kategori.toLowerCase()));
+    
+    if(filtered.length === 0) {
+        container.innerHTML = `<div class="col-12 text-center py-5"><h5 class="text-muted">Tidak ada arsip untuk kategori ${kategori}</h5></div>`;
+        return;
+    }
+    
+    container.innerHTML = filtered.map(n => {
+        let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja";
+        return `
+        <div class="col-md-6 col-lg-4 mb-4">
+            <a href="javascript:void(0)" onclick="bukaBacaBerita(${n.id})" class="related-news-card bg-white h-100 d-flex flex-column text-decoration-none">
+                <img src="${n.img}" class="img-berita-standar" style="height: 180px;">
+                <div class="p-4 d-flex flex-column flex-grow-1">
+                    <div class="mb-2">
+                        <span class="badge ${n.color || 'bg-secondary'}">${n.badge}</span>
+                        <span class="text-muted small ms-2">${dateStr}</span>
+                    </div>
+                    <h5 class="judul-berita-card fw-bold text-dark-blue mb-2 text-dark">${n.title}</h5>
+                </div>
+            </a>
+        </div>`;
+    }).join('');
 }
 
 function renderHalamanBacaPenuh(id) {
@@ -149,7 +203,16 @@ function renderHalamanBacaPenuh(id) {
     if(document.getElementById('readTitle')) document.getElementById('readTitle').innerText = n.title; 
     
     let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja dipublikasikan";
-    if(document.getElementById('readDate')) document.getElementById('readDate').innerHTML = `<i class="fa-regular fa-clock me-1"></i> ${dateStr}`;
+    let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
+    let readTime = Math.max(1, Math.ceil(wordCount / 200));
+
+    if(document.getElementById('readDate')) {
+        document.getElementById('readDate').innerHTML = `
+            <span class="d-block text-dark-blue fw-bold mb-1">Oleh: Divisi Kastrat HIMA Psikologi</span>
+            <i class="fa-regular fa-calendar me-1"></i> ${dateStr} &nbsp;•&nbsp; 
+            <i class="fa-solid fa-stopwatch me-1"></i> ${readTime} menit membaca
+        `;
+    }
     
     if(document.getElementById('readContent')) document.getElementById('readContent').innerHTML = n.full;
     renderKomentar(id); 
@@ -159,11 +222,11 @@ function renderHalamanBacaPenuh(id) {
     if(document.getElementById('relatedNewsContainer')) {
         document.getElementById('relatedNewsContainer').innerHTML = related.map(r => `
             <div class="col-md-4">
-                <a href="javascript:void(0)" onclick="bukaBacaBerita(${r.id})" class="related-news-card bg-white h-100 d-flex flex-column">
-                    <img src="${r.img}" style="height: 140px; object-fit: cover; width: 100%;">
+                <a href="javascript:void(0)" onclick="bukaBacaBerita(${r.id})" class="related-news-card bg-white h-100 d-flex flex-column text-decoration-none">
+                    <img src="${r.img}" class="img-berita-standar" style="height: 160px;">
                     <div class="p-3">
                         <span class="badge ${r.color || 'bg-secondary'} mb-2" style="font-size:0.7rem;">${r.badge}</span>
-                        <h6 class="fw-bold text-dark-blue mb-0" style="font-size: 0.95rem;">${r.title}</h6>
+                        <h6 class="judul-berita-card fw-bold text-dark-blue mb-0 text-dark" style="font-size: 1rem;">${r.title}</h6>
                     </div>
                 </a>
             </div>
@@ -177,6 +240,11 @@ function renderHalamanBacaPenuh(id) {
 function renderBeritaList(dataArray) {
     let container = document.getElementById('dynamicNewsContainer'); 
     if(!container) return; container.innerHTML = '';
+
+    let datalist = document.getElementById('searchSuggestions');
+    if(datalist && window.globalData && window.globalData.karisma_news) {
+        datalist.innerHTML = window.globalData.karisma_news.map(n => `<option value="${n.title}">`).join('');
+    }
     
     if(!dataArray || dataArray.length === 0) { 
         container.innerHTML = `
@@ -194,30 +262,32 @@ function renderBeritaList(dataArray) {
         let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja dipublikasikan";
         let ringkasan = n.short || (n.full ? n.full.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : 'Tidak ada ringkasan.');
         
+        let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
+        let readTime = Math.max(1, Math.ceil(wordCount / 200));
+
         container.innerHTML += `
-        <div class="col-12">
+        <div class="col-12 news-card-wrapper">
             <div class="card shadow-sm border-0 hover-card rounded-4 bg-white overflow-hidden text-start mb-2" style="border: 1px solid rgba(0,0,0,0.05) !important;">
                 <div class="row g-0 align-items-stretch">
                     <div class="col-md-5 col-lg-4">
-                        <img src="${n.img}" class="img-fluid w-100 h-100" style="aspect-ratio: 16/9; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
+                        <img src="${n.img}" class="img-berita-standar h-100" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
                     </div>
                     <div class="col-md-7 col-lg-8">
                         <div class="card-body p-4 p-lg-4 d-flex flex-column h-100 justify-content-center">
                             <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                                 <span class="badge-modern ${getBadgeClass(n.badge)}">${n.badge}</span>
-                                <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>${dateStr}</span>
                             </div>
-                            <h4 class="card-title fw-bold text-dark-blue mb-2" style="line-height: 1.3;">${n.title}</h4>
+                            <h4 class="judul-berita-card fw-bold text-dark-blue mb-2">${n.title}</h4>
                             <p class="card-text text-muted mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.95rem;">${ringkasan}</p>
                             
                             <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top">
-                                <div class="d-flex align-items-center gap-2">
-                                    <img src="https://ui-avatars.com/api/?name=Kastrat&background=0B192C&color=FFC107" class="rounded-circle border" width="32" height="32">
-                                    <span class="small fw-bold text-dark-blue">Divisi Kastrat</span>
+                                <div>
+                                    <span class="small fw-bold text-dark-blue d-block">Penulis: Divisi Kastrat</span>
+                                    <span class="small text-muted">${dateStr} • ${readTime} menit membaca</span>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-danger admin-only shadow-sm rounded-pill px-3" style="display:${admDisp} !important;" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash me-1"></i> Hapus</button>
-                                    <button class="btn btn-dark-blue rounded-pill px-4 fw-bold shadow-sm" onclick="bukaBacaBerita(${n.id})">Baca Selengkapnya <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <button class="btn btn-sm btn-outline-danger admin-only shadow-sm rounded-pill px-3" style="display:${admDisp} !important;" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>
+                                    <button class="btn btn-dark-blue btn-baca-selengkapnya rounded-pill fw-bold shadow-sm" onclick="bukaBacaBerita(${n.id})">Baca <i class="fa-solid fa-arrow-right ms-1"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -229,7 +299,7 @@ function renderBeritaList(dataArray) {
     
     container.innerHTML += `
     <div class="col-12 text-center mt-5 pt-3">
-        <button class="btn btn-outline-primary border-2 rounded-pill px-5 py-2 fw-bold text-dark-blue" onclick="alert('Fitur Halaman Arsip Penuh sedang dibangun!')">Lihat Semua Arsip Kajian <i class="fa-solid fa-arrow-right-long ms-2"></i></button>
+        <button class="btn btn-outline-primary border-2 rounded-pill px-5 py-2 fw-bold text-dark-blue" onclick="bukaArsipPenuh()">Lihat Semua Arsip Kajian <i class="fa-solid fa-arrow-right-long ms-2"></i></button>
     </div>`;
 }
 
