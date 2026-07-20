@@ -88,7 +88,17 @@ if(!sessionStorage.getItem('visited')) {
 }
 
 // ==========================================
-// 3. MESIN ROUTING URL, HALAMAN BACA & ARSIP
+// VAKSIN ANTI-CRASH FIREBASE (ARRAY CONVERTER)
+// ==========================================
+function getSafeNewsArray() {
+    let raw = window.globalData.karisma_news;
+    if (!raw) return [];
+    let arr = Array.isArray(raw) ? raw : Object.values(raw);
+    return arr.filter(n => n !== null && n !== undefined && n.id !== undefined);
+}
+
+// ==========================================
+// 3. MESIN ROUTING URL, HAL উভয় BACA & ARSIP
 // ==========================================
 window.addEventListener('popstate', checkURLRouting);
 document.addEventListener('DOMContentLoaded', checkURLRouting);
@@ -150,7 +160,7 @@ function kembaliKeBeranda() {
 }
 
 function filterArsip(kategori) {
-    let dbNews = window.globalData.karisma_news || [];
+    let dbNews = getSafeNewsArray();
     let container = document.getElementById('arsipContainer');
     if(!container) return;
     
@@ -188,8 +198,8 @@ function filterArsip(kategori) {
 }
 
 function renderHalamanBacaPenuh(id) {
-    let dbNews = window.globalData.karisma_news; 
-    if(!dbNews) return;
+    let dbNews = getSafeNewsArray(); 
+    if(!dbNews || dbNews.length === 0) return;
     
     const n = dbNews.find(x => x.id === id); 
     if(!n) { kembaliKeBeranda(); return; }
@@ -241,9 +251,10 @@ function renderBeritaList(dataArray) {
     let container = document.getElementById('dynamicNewsContainer'); 
     if(!container) return; container.innerHTML = '';
 
+    let dbNews = getSafeNewsArray();
     let datalist = document.getElementById('searchSuggestions');
-    if(datalist && window.globalData && window.globalData.karisma_news) {
-        datalist.innerHTML = window.globalData.karisma_news.map(n => `<option value="${n.title}">`).join('');
+    if(datalist && dbNews.length > 0) {
+        datalist.innerHTML = dbNews.map(n => `<option value="${n.title}">`).join('');
     }
     
     if(!dataArray || dataArray.length === 0) { 
@@ -305,7 +316,7 @@ function renderBeritaList(dataArray) {
 
 function cariBerita() {
     let kw = document.getElementById('searchInput').value.toLowerCase(); 
-    let dbNews = window.globalData.karisma_news || [];
+    let dbNews = getSafeNewsArray();
     if(kw === '') { 
         const hr = new Date().getHours(); 
         let startIdx = (hr * 3) % Math.max(1, dbNews.length);
