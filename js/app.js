@@ -12,17 +12,12 @@ function updateUISecaraRealtime() {
         document.querySelectorAll('.editable-text').forEach(el => {
             if(el.id && window.globalData) {
                 let data = window.globalData[el.id];
-                // PENCEGAHAN CRASH: Pastikan data benar-benar teks (string) sebelum diproses
                 if(data && typeof data === 'string' && data.trim() !== '') {
-                    // PENCEGAHAN KEDIP: Hanya timpa teks jika datanya benar-benar berubah
-                    if(el.innerText !== data) {
-                        el.innerText = data; 
-                    }
+                    if(el.innerText !== data) { el.innerText = data; }
                 }
                 
                 let fontData = window.globalData['font_' + el.id];
                 if(fontData && typeof fontData === 'string' && fontData.trim() !== '') {
-                    // PENCEGAHAN KEDIP FONT: Hanya ubah jika font-nya berbeda
                     if(el.style.fontFamily !== fontData) el.style.fontFamily = fontData;
                 } else {
                     if(el.style.fontFamily !== "") el.style.fontFamily = ""; 
@@ -30,15 +25,13 @@ function updateUISecaraRealtime() {
             }
         });
 
-        // 2. FIX BUG IPHONE: Render Gambar dengan Smart Caching (Anti DOM Thrashing)
+        // 2. FIX BUG IPHONE: Render Gambar dengan Smart Caching
         const imgIds = ['heroBg', 'logo1', 'logo2', 'logo3'];
         imgIds.forEach(id => {
             let imgSrc = window.globalData[id];
-            // HANYA pasang gambar jika link-nya valid teks (lebih dari 5 huruf)
             if(imgSrc && typeof imgSrc === 'string' && imgSrc.length > 5) {
                 if(id === 'heroBg') {
                     let heroEl = document.getElementById('heroSection');
-                    // PENCEGAHAN LOOP RENDER: Hanya pasang jika background lama belum memuat gambar baru
                     if(heroEl && !heroEl.style.backgroundImage.includes(imgSrc)) {
                         heroEl.style.backgroundImage = `url('${imgSrc}')`;
                         heroEl.style.backgroundSize = 'cover';
@@ -47,10 +40,7 @@ function updateUISecaraRealtime() {
                     }
                 } else {
                     let imgEl = document.getElementById(id);
-                    // PENCEGAHAN DOM RE-PAINT: Hanya ganti src jika URL di database benar-benar berbeda
-                    if(imgEl && imgEl.src !== imgSrc) {
-                        imgEl.src = imgSrc;
-                    }
+                    if(imgEl && imgEl.src !== imgSrc) { imgEl.src = imgSrc; }
                 }
             }
         });
@@ -65,6 +55,8 @@ function updateUISecaraRealtime() {
         if(typeof renderAgenda === 'function') renderAgenda();
         if(typeof renderRepositori === 'function') renderRepositori();
         if(typeof cariBerita === 'function' && document.getElementById('searchInput')) cariBerita(); 
+        
+        // Render Komentar Jika Sedang di Halaman Baca
         if(window.activeNewsId && typeof renderKomentar === 'function') renderKomentar(window.activeNewsId); 
         
         // 5. Gamifikasi
@@ -80,13 +72,12 @@ function updateUISecaraRealtime() {
         }
         
     } catch (error) {
-        // Jika ada data yang aneh, sistem akan mengabaikannya dan tidak akan mati mendadak
         console.error("Sistem UI Terhenti karena Error Data:", error);
     }
 }
 
 // ==========================================
-// 2. LOGIKA PENGUNJUNG MURNI (ANTI-BUG VISITOR)
+// 2. LOGIKA PENGUNJUNG MURNI
 // ==========================================
 if(!sessionStorage.getItem('visited')) {
     window.db.ref('karisma_visitors').once('value').then(snap => {
@@ -97,33 +88,149 @@ if(!sessionStorage.getItem('visited')) {
 }
 
 // ==========================================
-// 3. FITUR KAWAL ISU & PORTAL BERITA KAJIAN
+// 3. MESIN ROUTING URL & HALAMAN BACA
+// ==========================================
+window.addEventListener('popstate', checkURLRouting);
+document.addEventListener('DOMContentLoaded', checkURLRouting);
+
+function checkURLRouting() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const idBerita = urlParams.get('berita');
+    
+    const mainSections = ['heroSection', 'profil', 'kawaljanji', 'agenda', 'berita', 'repositori', 'interaktif', 'angket'];
+    
+    if (idBerita) {
+        // Mode Baca: Sembunyikan beranda, tampilkan halaman artikel
+        mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+        if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'block';
+        window.scrollTo(0, 0);
+        
+        if (window.globalData && window.globalData.karisma_news) {
+            renderHalamanBacaPenuh(parseInt(idBerita));
+        } else {
+            // Pancing Firebase jika langsung direct link
+            window.db.ref('karisma_news').once('value').then(snap => {
+                if(!window.globalData) window.globalData = {};
+                window.globalData.karisma_news = snap.val();
+                renderHalamanBacaPenuh(parseInt(idBerita));
+            });
+        }
+    } else {
+        // Mode Beranda: Sembunyikan artikel, tampilkan beranda
+        mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'block'; });
+        if(document.getElementById('heroSection')) document.getElementById('heroSection').style.display = 'flex'; 
+        if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
+    }
+}
+
+function bukaBacaBerita(id) {
+    window.history.pushState({}, '', '?berita=' + id);
+    checkURLRouting();
+}
+
+function kembaliKeBeranda() {
+    window.history.pushState({}, '', window.location.pathname);
+    checkURLRouting();
+}
+
+function renderHalamanBacaPenuh(id) {
+    let dbNews = window.globalData.karisma_news; 
+    if(!dbNews) return;
+    
+    const n = dbNews.find(x => x.id === id); 
+    if(!n) { kembaliKeBeranda(); return; }
+    
+    window.activeNewsId = id; 
+    if(document.getElementById('readImg')) document.getElementById('readImg').src = n.img; 
+    if(document.getElementById('readBadge')) {
+        document.getElementById('readBadge').className = `badge ${n.color || 'bg-danger'} px-3 py-2`;
+        document.getElementById('readBadge').innerText = n.badge || 'Kajian'; 
+    }
+    if(document.getElementById('readTitle')) document.getElementById('readTitle').innerText = n.title; 
+    
+    let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja dipublikasikan";
+    if(document.getElementById('readDate')) document.getElementById('readDate').innerHTML = `<i class="fa-regular fa-clock me-1"></i> ${dateStr}`;
+    
+    if(document.getElementById('readContent')) document.getElementById('readContent').innerHTML = n.full;
+    renderKomentar(id); 
+    
+    // Render Berita Terkait
+    let related = dbNews.filter(x => x.id !== id).slice(0, 3);
+    if(document.getElementById('relatedNewsContainer')) {
+        document.getElementById('relatedNewsContainer').innerHTML = related.map(r => `
+            <div class="col-md-4">
+                <a href="javascript:void(0)" onclick="bukaBacaBerita(${r.id})" class="related-news-card bg-white h-100 d-flex flex-column">
+                    <img src="${r.img}" style="height: 140px; object-fit: cover; width: 100%;">
+                    <div class="p-3">
+                        <span class="badge ${r.color || 'bg-secondary'} mb-2" style="font-size:0.7rem;">${r.badge}</span>
+                        <h6 class="fw-bold text-dark-blue mb-0" style="font-size: 0.95rem;">${r.title}</h6>
+                    </div>
+                </a>
+            </div>
+        `).join('');
+    }
+}
+
+// ==========================================
+// 4. FITUR KAWAL ISU & PORTAL BERITA KAJIAN
 // ==========================================
 function renderBeritaList(dataArray) {
     let container = document.getElementById('dynamicNewsContainer'); 
     if(!container) return; container.innerHTML = '';
+    
     if(!dataArray || dataArray.length === 0) { 
-        container.innerHTML = '<p class="text-center text-muted py-4">Kajian tidak ditemukan.</p>'; 
+        container.innerHTML = `
+        <div class="col-12 text-center py-5">
+            <i class="fa-regular fa-newspaper fa-3x text-muted mb-3 opacity-25"></i>
+            <h5 class="text-dark-blue fw-bold">Belum ada Kajian</h5>
+            <p class="text-muted">Gunakan mode dewa untuk mempublikasikan naskah pertama.</p>
+        </div>`; 
         return; 
     }
     
-    const admDisp = window.role === 'admin' || window.role === 'mod' ? 'block' : 'none';
+    const admDisp = window.role === 'admin' || window.role === 'mod' ? 'flex' : 'none';
+    
     dataArray.forEach(n => {
+        let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja dipublikasikan";
+        let ringkasan = n.short || (n.full ? n.full.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : 'Tidak ada ringkasan.');
+        
         container.innerHTML += `
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 hover-card rounded-4 bg-white overflow-hidden">
-                <img src="${n.img}" class="card-img-top" style="height:200px; object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
-                <div class="card-body d-flex flex-column">
-                    <span class="badge ${n.color || 'bg-secondary'} mb-2 align-self-start">${n.badge}</span>
-                    <h5 class="card-title fw-bold mt-2 text-dark">${n.title}</h5>
-                    <button class="btn btn-outline-primary rounded-pill mt-auto w-100 fw-bold" onclick='bukaBacaBerita(${n.id})'>Baca Kajian</button>
-                    <div class="admin-only gap-2 mt-2 pt-2 border-top" style="display:${admDisp} !important;">
-                        <button class="btn btn-sm btn-danger w-100" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash me-1"></i> Hapus Postingan</button>
+        <div class="col-12">
+            <div class="card shadow-sm border-0 hover-card rounded-4 bg-white overflow-hidden text-start mb-2" style="border: 1px solid rgba(0,0,0,0.05) !important;">
+                <div class="row g-0 align-items-stretch">
+                    <div class="col-md-5 col-lg-4">
+                        <img src="${n.img}" class="img-fluid w-100 h-100" style="aspect-ratio: 16/9; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
+                    </div>
+                    <div class="col-md-7 col-lg-8">
+                        <div class="card-body p-4 p-lg-4 d-flex flex-column h-100 justify-content-center">
+                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                <span class="badge-modern ${getBadgeClass(n.badge)}">${n.badge}</span>
+                                <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>${dateStr}</span>
+                            </div>
+                            <h4 class="card-title fw-bold text-dark-blue mb-2" style="line-height: 1.3;">${n.title}</h4>
+                            <p class="card-text text-muted mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.95rem;">${ringkasan}</p>
+                            
+                            <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="https://ui-avatars.com/api/?name=Kastrat&background=0B192C&color=FFC107" class="rounded-circle border" width="32" height="32">
+                                    <span class="small fw-bold text-dark-blue">Divisi Kastrat</span>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-danger admin-only shadow-sm rounded-pill px-3" style="display:${admDisp} !important;" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash me-1"></i> Hapus</button>
+                                    <button class="btn btn-dark-blue rounded-pill px-4 fw-bold shadow-sm" onclick="bukaBacaBerita(${n.id})">Baca Selengkapnya <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>`;
     });
+    
+    container.innerHTML += `
+    <div class="col-12 text-center mt-5 pt-3">
+        <button class="btn btn-outline-primary border-2 rounded-pill px-5 py-2 fw-bold text-dark-blue" onclick="alert('Fitur Halaman Arsip Penuh sedang dibangun!')">Lihat Semua Arsip Kajian <i class="fa-solid fa-arrow-right-long ms-2"></i></button>
+    </div>`;
 }
 
 function cariBerita() {
@@ -138,19 +245,6 @@ function cariBerita() {
     }
 }
 
-function bukaBacaBerita(id) {
-    let dbNews = window.globalData.karisma_news; 
-    const n = dbNews.find(x => x.id === id); 
-    window.activeNewsId = id; 
-    document.getElementById('modalNewsImg').src = n.img; 
-    document.getElementById('modalNewsBadge').className = `badge ${n.color || 'bg-danger'} mb-3 fs-6`;
-    document.getElementById('modalNewsBadge').innerText = n.badge; 
-    document.getElementById('modalNewsTitle').innerText = n.title; 
-    document.getElementById('modalNewsContent').innerHTML = n.full;
-    renderKomentar(id); 
-    new bootstrap.Modal(document.getElementById('newsReaderModal')).show();
-}
-
 function renderKomentar(id) {
     const d = window.globalData['komentar_berita_' + id] || [];
     let html = d.length === 0 ? '<p class="text-muted small py-2">Belum ada diskusi publik. Tulis pandangan Anda di bawah!</p>' : d.map((k, i) => {
@@ -158,20 +252,21 @@ function renderKomentar(id) {
         let delBtn = window.role === 'mod' ? `<button class="btn btn-sm text-danger position-absolute top-0 end-0 m-2 border-0 bg-transparent" onclick="hapusKomenDewa(${id}, ${i})"><i class="fa-solid fa-xmark fa-lg"></i></button>` : '';
         return `<div class="comment-box position-relative"><h6 class="fw-bold mb-1">${k.nama} ${badge} <span class="text-muted small ms-2 fw-normal">${k.waktu}</span></h6><p class="mb-0 text-dark">${k.isi}</p>${delBtn}</div>`;
     }).join('');
-    document.getElementById('commentList').innerHTML = html;
+    
+    if(document.getElementById('commentList')) document.getElementById('commentList').innerHTML = html;
 }
 
 function tambahKomentar() {
-    let isi = document.getElementById('isiKomentar').value; 
+    let isi = document.getElementById('isiKomentar') ? document.getElementById('isiKomentar').value : ''; 
     if(isi.trim() === '') return;
     let d = window.globalData['komentar_berita_' + window.activeNewsId] || [];
     d.push({ nama: document.getElementById('namaKomentator').value || 'Anonim', isi: isi, role: window.role, waktu: new Date().toLocaleDateString('id-ID') });
     window.db.ref('komentar_berita_' + window.activeNewsId).set(d);
-    document.getElementById('isiKomentar').value = '';
+    if(document.getElementById('isiKomentar')) document.getElementById('isiKomentar').value = '';
 }
 
 // ==========================================
-// 4. RENDER TRACKER, AGENDA, & PDF REPOSITORY
+// 5. RENDER TRACKER, AGENDA, & PDF REPOSITORY
 // ==========================================
 function renderTracker(){ 
     let dTrack = [{ t:"Penurunan UKT Kampus", s:"Proses", c:"status-proses", i:"fa-spinner fa-spin text-warning"}];
@@ -209,7 +304,6 @@ function renderAgenda(){
     }
 }
 
-// Fungsi Penentu Warna Kategori Dinamis
 function getBadgeClass(kategori) {
     let cat = (kategori || '').toLowerCase();
     if(cat.includes('policy')) return 'badge-policy';
@@ -219,7 +313,6 @@ function getBadgeClass(kategori) {
     return 'badge-default';
 }
 
-// Render Dashboard PDF Baru
 function renderRepositori(filterKeyword = "", filterCategory = "Semua"){ 
     let dRepo = [
         { j:"Kajian Kebijakan UKT Nominal 2026", k:"Kajian Kastrat", t:"12 Juli 2026", l:"#" },
@@ -227,7 +320,6 @@ function renderRepositori(filterKeyword = "", filterCategory = "Semua"){
     ];
     let d = window.globalData.karisma_repo || dRepo; 
     
-    // Mesin Filter & Pencarian
     let filteredData = d.filter(x => {
         let matchKeyword = x.j.toLowerCase().includes(filterKeyword.toLowerCase());
         let matchCategory = filterCategory === "Semua" || (x.k && x.k.toLowerCase().includes(filterCategory.toLowerCase()));
@@ -237,10 +329,8 @@ function renderRepositori(filterKeyword = "", filterCategory = "Semua"){
     let container = document.getElementById('pdfContainer');
     if(!container) return;
 
-    // Update Angka Jumlah Dokumen
     if(document.getElementById('repoCount')) document.getElementById('repoCount').innerText = filteredData.length;
 
-    // 1. Tampilan "Empty State" (Jika File Kosong/Tidak Ditemukan)
     if (filteredData.length === 0) {
         container.innerHTML = `
             <div class="text-center py-5 my-4">
@@ -248,13 +338,9 @@ function renderRepositori(filterKeyword = "", filterCategory = "Semua"){
                 <h5 class="fw-bold text-dark-blue">Belum ada dokumen</h5>
                 <p class="text-muted">Gunakan kata kunci lain atau unggah dokumen baru dari Mode Dewa.</p>
             </div>`;
-    } 
-    // 2. Tampilan Card List Modern
-    else {
+    } else {
         container.innerHTML = filteredData.map((x, i) => {
-            // Index asli untuk penghapusan
             let originalIndex = d.findIndex(item => item.j === x.j && item.l === x.l);
-            
             return `
             <div class="doc-card d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
                 <div class="d-flex align-items-start gap-3">
@@ -283,7 +369,6 @@ function renderRepositori(filterKeyword = "", filterCategory = "Semua"){
     }
 }
 
-// Fungsi Pemicu Interaksi Saat Ngetik di Search Bar
 window.filterRepositori = function() {
     let kw = document.getElementById('searchRepoInput') ? document.getElementById('searchRepoInput').value : "";
     let cat = document.getElementById('filterRepoKategori') ? document.getElementById('filterRepoKategori').value : "Semua";
@@ -291,7 +376,7 @@ window.filterRepositori = function() {
 };
 
 // ==========================================
-// 5. ENGINE GAMIFICATION PURE FIREBASE REALTIME
+// 6. ENGINE GAMIFICATION & PURE FIREBASE REALTIME
 // ==========================================
 
 function renderPersonalDashboard(userData) {
@@ -302,7 +387,6 @@ function renderPersonalDashboard(userData) {
     document.getElementById('userPoints').innerText = userData.points;
     document.getElementById('userStreak').innerText = userData.streak;
     
-    // Render Badges
     let badgeContainer = document.getElementById('badgesContainer');
     if(!userData.badges || userData.badges.length === 0) {
         badgeContainer.innerHTML = `<span class="badge bg-light text-muted border w-100 py-2">Belum ada pencapaian. Mulaiah berinteraksi!</span>`;
@@ -311,7 +395,6 @@ function renderPersonalDashboard(userData) {
     }
 }
 
-// Cek Syarat Badge Secara Otomatis
 function checkAndAwardBadges(uid, userData) {
     let newBadges = [];
     if(userData.votesCount >= 1 && !userData.badges?.includes("Pemilih Perdana")) newBadges.push("Pemilih Perdana");
@@ -340,7 +423,6 @@ function tambahPoinFirebase(uid, jumlahPoin) {
     });
 }
 
-// --- 5.1 LIVE POLLING REALTIME ---
 function renderPollingRealtime() {
     let data = window.globalData.karisma_modern_poll;
     if(!data || !data.q) {
@@ -354,7 +436,6 @@ function renderPollingRealtime() {
     let totalVotes = data.votes ? data.votes.reduce((a, b) => a + b, 0) : 0;
     document.getElementById('pollTotalVotes').innerText = `${totalVotes} Suara`;
     
-    // Cek apakah user saat ini sudah vote dari data realtime (kita gunakan local flag sbg pengaman UI agar tidak spam klik)
     let isVoted = window.currentUid ? localStorage.getItem('voted_' + window.currentUid + '_' + data.q) : false;
     
     document.getElementById('pollOptionsContainer').innerHTML = data.opts.map((opt, i) => {
@@ -392,7 +473,6 @@ function submitVote(idx, questionKey) {
     window.db.ref('karisma_modern_poll').set(data);
     localStorage.setItem('voted_' + window.currentUid + '_' + questionKey, 'true');
     
-    // Tambah poin dan riwayat aktivitas ke Firebase
     const userRef = window.db.ref('karisma_users/' + window.currentUid);
     userRef.once('value').then(snap => {
         let ud = snap.val();
@@ -408,7 +488,6 @@ function kirimReaksi(type) {
     window.db.ref('karisma_modern_poll/reactions').set(data.reactions);
 }
 
-// --- 5.2 TANTANGAN KRITIS REALTIME ---
 function renderDailyChallenge() {
     let data = window.globalData.karisma_daily;
     if(!data || !data.q) {
@@ -441,7 +520,6 @@ function jawabDaily(idxSelected, idxBenar, exp, dateKey) {
     let resBox = document.getElementById('dailyResult');
     resBox.classList.remove('d-none', 'bg-light', 'text-dark-blue', 'bg-success', 'bg-danger');
     
-    // Tambah hitungan challenge ke akun user
     const userRef = window.db.ref('karisma_users/' + window.currentUid);
     userRef.once('value').then(snap => { let ud = snap.val(); if(ud) { ud.challengesCount += 1; userRef.set(ud); } });
 
@@ -457,7 +535,6 @@ function jawabDaily(idxSelected, idxBenar, exp, dateKey) {
     document.getElementById('dailyOptionsContainer').style.display = 'none';
 }
 
-// --- 5.3 LEADERBOARD REALTIME (SMART LIMIT) ---
 function renderLeaderboard() {
     let usersData = window.globalData.karisma_users;
     let lbContainer = document.getElementById('leaderboardContainer');
@@ -468,7 +545,6 @@ function renderLeaderboard() {
         return;
     }
 
-    // Tarik batas limit dari database, jika tidak ada, gunakan 3 sebagai standar estetika
     let limit = window.globalData.karisma_leaderboard_limit || 3;
     let usersArray = Object.values(usersData).filter(u => u.points > 0).sort((a, b) => b.points - a.points).slice(0, limit);
     
@@ -477,7 +553,6 @@ function renderLeaderboard() {
         return;
     }
 
-    // Render daftar peringkat
     let htmlContent = usersArray.map((u, i) => {
         let badgeStyle = i === 0 ? 'bg-warning text-dark' : (i === 1 ? 'bg-secondary text-white' : (i === 2 ? 'bg-danger text-white' : 'bg-light text-muted border'));
         let shortName = u.nama.split(' ')[0];
@@ -496,15 +571,13 @@ function renderLeaderboard() {
         </div>`;
     }).join('');
 
-    // Pasang tombol pengaturan khusus Admin di bawah leaderboard
-    if(window.role === 'mod') {
+    if(window.role === 'admin' || window.role === 'mod') {
         htmlContent += `<button class="btn btn-sm btn-outline-secondary w-100 mt-2 admin-only" onclick="editLimitLeaderboard()"><i class="fa-solid fa-gear me-1"></i>Atur Batas Peringkat</button>`;
     }
 
     lbContainer.innerHTML = htmlContent;
 }
 
-// Fungsi Engine untuk Admin Mengubah Limit
 async function editLimitLeaderboard() {
     const { value: limit } = await Swal.fire({
         title: 'Pengaturan Leaderboard',
@@ -522,22 +595,16 @@ async function editLimitLeaderboard() {
 }
 
 // ==========================================
-// 6. SENSOR KLIK UNTUK FITUR EDIT LANGSUNG (ADMIN ONLY)
+// 7. SENSOR KLIK UNTUK FITUR EDIT LANGSUNG
 // ==========================================
 document.addEventListener('click', function(e) {
-    // Jika yang klik adalah Admin, dan elemen yang diklik punya class "editable-text"
     if((window.role === 'admin' || window.role === 'mod')) {
         const targetEl = e.target.closest('.editable-text');
         if(targetEl && targetEl.id) {
-            e.preventDefault(); // Mencegah pindah halaman jika teks berupa link
-            
-            // Ambil sedikit potongan teks aslinya untuk dijadikan judul pop-up
+            e.preventDefault(); 
             let labelText = targetEl.innerText.trim();
             let label = labelText.length > 20 ? labelText.substring(0, 20) + "..." : labelText;
-            
-            if(typeof editTeks === 'function') {
-                editTeks(targetEl.id, label);
-            }
+            if(typeof editTeks === 'function') { editTeks(targetEl.id, label); }
         }
     }
 });
