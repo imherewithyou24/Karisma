@@ -13,6 +13,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- MESIN RICH TEXT EDITOR (QUILL.JS) -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -372,13 +376,6 @@
                         </div>
                     </div>
 
-                    <div class="modern-card p-4 bg-white">
-                        <h6 class="fw-bold text-dark-blue mb-3 border-bottom pb-2"><i class="fa-solid fa-trophy text-warning me-2"></i>Peringkat Aktivis</h6>
-                        <div class="d-flex flex-column gap-3" id="leaderboardContainer">
-                            <p class="text-muted small text-center my-3">Belum ada mahasiswa yang memperoleh poin minggu ini.</p>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>
@@ -497,6 +494,73 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- MODAL STUDIO REDAKSI (RICH TEXT EDITOR) -->
+    <div class="modal fade" id="editorModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-dark-blue text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-nib text-warning me-2"></i>Studio Redaksi KARISMA</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 p-md-5 bg-light">
+                    
+                    <!-- METADATA SECTION -->
+                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">1. Metadata Kajian</h6>
+                    <div class="row g-3 mb-5">
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold text-muted">Judul Kajian</label>
+                            <input type="text" id="editJudul" class="form-control shadow-sm border-0 py-2" placeholder="Contoh: Prabowo Lantik 6 Pejabat Baru...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Kategori</label>
+                            <select id="editKategori" class="form-select shadow-sm border-0 py-2">
+                                <option value="Kajian Akademik">Kajian Akademik</option>
+                                <option value="Kajian Politik">Kajian Politik</option>
+                                <option value="Opini">Opini</option>
+                                <option value="Press Release">Press Release</option>
+                                <option value="Riset">Riset</option>
+                                <option value="Analisis">Analisis</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Nama Penulis</label>
+                            <input type="text" id="editPenulis" class="form-control shadow-sm border-0 py-2" value="Ahmad Hafiz Arsya">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Divisi</label>
+                            <input type="text" id="editDivisi" class="form-control shadow-sm border-0 py-2" value="Kastrat">
+                        </div>
+                    </div>
+
+                    <!-- THUMBNAIL UPLOADER (AUTO CROP & WEBP) -->
+                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">2. Cover / Thumbnail (Otomatis 16:9)</h6>
+                    <div class="mb-5 bg-white p-4 rounded-4 shadow-sm border text-center position-relative">
+                        <input type="file" id="editCoverFile" class="form-control d-none" accept="image/*" onchange="prosesGambarUpload(event)">
+                        <button class="btn btn-outline-primary rounded-pill px-4 fw-bold mb-3" onclick="document.getElementById('editCoverFile').click()"><i class="fa-solid fa-upload me-2"></i>Pilih Gambar Beresolusi Tinggi</button>
+                        <p class="small text-muted mb-3">Minimal resolusi: 1600 x 900 px. Akan dikonversi otomatis ke WebP.</p>
+                        
+                        <div id="previewCoverContainer" class="d-none">
+                            <hr>
+                            <p class="small fw-bold text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i> Preview Hasil Crop (16:9)</p>
+                            <img id="previewCoverImg" src="" class="img-fluid rounded-3 shadow-sm mx-auto d-block" style="max-width: 100%; aspect-ratio: 16/9; object-fit: cover;">
+                        </div>
+                    </div>
+
+                    <!-- ISI ARTIKEL (RICH TEXT) -->
+                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">3. Naskah Lengkap</h6>
+                    <div class="bg-white rounded-4 shadow-sm border overflow-hidden">
+                        <div id="quillEditor" style="height: 400px; font-size: 1.1rem;"></div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-white border-top-0 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="previewArtikel()">👁️ Preview Naskah</button>
+                    <button type="button" class="btn btn-success rounded-pill fw-bold px-5" onclick="simpanArtikel()"><i class="fa-solid fa-paper-plane me-2"></i> Publikasikan</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
