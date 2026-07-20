@@ -318,3 +318,14 @@ html {
     border-color: var(--accent-gold);
 }
 .dark-mode .related-news-card { border-color: #333; }
+/* TOMBOL CUSTOM PORTAL BERITA */
+.btn-dark-blue {
+    background-color: var(--dark-blue);
+    color: #ffffff;
+    transition: all 0.2s ease;
+}
+.btn-dark-blue:hover {
+    background-color: var(--accent-gold);
+    color: var(--dark-blue);
+    transform: translateX(3px);
+}
