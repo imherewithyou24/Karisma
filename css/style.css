@@ -412,3 +412,30 @@ html {
     position: relative;
     z-index: 2 !important;
 }
+/* ========================================= */
+/* OPTIMASI HARDWARE ACCELERATION (ANTI-LAG) */
+/* ========================================= */
+
+/* 1. Matikan efek blur yang memakan RAM sangat besar di Safari iPhone */
+#authOverlay {
+    backdrop-filter: none !important; 
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(255, 255, 255, 0.98) !important;
+}
+
+/* 2. Beri tahu GPU/VGA untuk memprioritaskan elemen yang sering berubah */
+.marquee-content, .hover-card, .modern-card {
+    will-change: transform;
+    -webkit-transform: translateZ(0); /* Force Hardware Acceleration */
+    transform: translateZ(0);
+}
+
+/* 3. Kurangi beban kalkulasi shadow saat hover di HP */
+@media (max-width: 768px) {
+    .modern-card, .hover-card {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+    }
+    .hover-card:hover {
+        transform: none !important; /* Matikan animasi naik-turun di HP agar tidak patah-patah */
+    }
+}
