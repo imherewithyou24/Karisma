@@ -114,12 +114,14 @@ function checkURLRouting() {
     const urlParams = new URLSearchParams(window.location.search);
     const idBerita = urlParams.get('berita');
     const isArsip = urlParams.get('arsip');
+    const isArsipPdf = urlParams.get('arsippdf'); // TAHAP 3: Parameter URL Baru untuk PDF
     
     const mainSections = ['heroSection', 'profil', 'kawaljanji', 'agenda', 'berita', 'repositori', 'interaktif', 'angket'];
     
     if (idBerita) {
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
         if(document.getElementById('arsipSection')) document.getElementById('arsipSection').style.display = 'none';
+        if(document.getElementById('arsipPdfSection')) document.getElementById('arsipPdfSection').style.display = 'none';
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'block';
         window.scrollTo(0, 0);
         
@@ -135,16 +137,29 @@ function checkURLRouting() {
     } else if (isArsip) {
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
+        if(document.getElementById('arsipPdfSection')) document.getElementById('arsipPdfSection').style.display = 'none';
         if(document.getElementById('arsipSection')) {
             document.getElementById('arsipSection').style.display = 'block';
             filterArsip('Semua'); 
         }
         window.scrollTo(0, 0);
+    } else if (isArsipPdf) {
+        // TAHAP 3: Mode Arsip PDF Penuh
+        mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'none'; });
+        if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
+        if(document.getElementById('arsipSection')) document.getElementById('arsipSection').style.display = 'none';
+        if(document.getElementById('arsipPdfSection')) {
+            document.getElementById('arsipPdfSection').style.display = 'block';
+            filterArsipPdfLengkap(); 
+        }
+        window.scrollTo(0, 0);
     } else {
+        // Mode Beranda
         mainSections.forEach(id => { if(document.getElementById(id)) document.getElementById(id).style.display = 'block'; });
         if(document.getElementById('heroSection')) document.getElementById('heroSection').style.display = 'flex'; 
         if(document.getElementById('readingSection')) document.getElementById('readingSection').style.display = 'none';
         if(document.getElementById('arsipSection')) document.getElementById('arsipSection').style.display = 'none';
+        if(document.getElementById('arsipPdfSection')) document.getElementById('arsipPdfSection').style.display = 'none';
     }
 }
 
@@ -158,6 +173,12 @@ function bukaArsipPenuh() {
     checkURLRouting();
 }
 
+// TAHAP 3: Fungsi Pemicu Halaman Arsip PDF
+window.bukaArsipPdfPenuh = function() {
+    window.history.pushState({}, '', '?arsippdf=true');
+    checkURLRouting();
+};
+
 function kembaliKeBeranda() {
     window.history.pushState({}, '', window.location.pathname);
     checkURLRouting();
@@ -167,13 +188,11 @@ function renderFilterArsip(dbNews) {
     let container = document.getElementById('dynamicArsipFilters');
     if(!container) return;
     
-    // Tarik semua kategori unik dari database
     let categories = ['Semua'];
     dbNews.forEach(n => {
         if(n.badge && !categories.includes(n.badge)) categories.push(n.badge);
     });
     
-    // Generate tombol filter
     container.innerHTML = categories.map(cat => 
         `<button class="btn btn-sm btn-outline-dark rounded-pill fw-medium" onclick="filterArsip('${cat}', this)">${cat}</button>`
     ).join('');
@@ -184,17 +203,14 @@ function filterArsip(kategori, btnElement = null) {
     let container = document.getElementById('arsipContainer');
     if(!container) return;
 
-    // Generate filter tombol jika belum ada
     if(!document.getElementById('dynamicArsipFilters').innerHTML.trim()) {
         renderFilterArsip(dbNews);
     }
 
-    // Visual indikator active button
     if(btnElement) {
         document.querySelectorAll('#dynamicArsipFilters .btn').forEach(b => b.classList.remove('active', 'btn-dark'));
         btnElement.classList.add('active', 'btn-dark');
     } else {
-        // Set 'Semua' aktif saat pertama load
         document.querySelectorAll('#dynamicArsipFilters .btn').forEach(b => {
             b.classList.remove('active', 'btn-dark');
             if(b.innerText === 'Semua') b.classList.add('active', 'btn-dark');
@@ -208,7 +224,6 @@ function filterArsip(kategori, btnElement = null) {
         return;
     }
 
-    // Render ulang menggunakan layout Horizontal (Kiri Gambar, Kanan Teks) persis halaman Kajian
     container.innerHTML = filtered.map(n => {
         let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja dipublikasikan";
         let ringkasan = n.short || (n.full ? n.full.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : 'Tidak ada ringkasan.');
@@ -267,7 +282,6 @@ function renderHalamanBacaPenuh(id) {
     let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
     let readTime = Math.max(1, Math.ceil(wordCount / 200));
 
-    // TAHAP 1: METADATA PENULIS & DIVISI
     let penulis = n.penulis || "Ahmad Hafiz Arsya"; 
     let divisi = n.divisi || "Divisi Kastrat";
 
@@ -283,7 +297,6 @@ function renderHalamanBacaPenuh(id) {
     if(document.getElementById('readContent')) document.getElementById('readContent').innerHTML = n.full;
     renderKomentar(id); 
     
-    // Render Berita Terkait
     let related = dbNews.filter(x => x.id !== id).slice(0, 3);
     if(document.getElementById('relatedNewsContainer')) {
         document.getElementById('relatedNewsContainer').innerHTML = related.map(r => `
@@ -332,7 +345,6 @@ function renderBeritaList(dataArray) {
         let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
         let readTime = Math.max(1, Math.ceil(wordCount / 200));
 
-        // TAHAP 1: METADATA PENULIS DI CARD
         let penulis = n.penulis || "Divisi Kastrat";
 
         container.innerHTML += `
@@ -453,23 +465,26 @@ function getBadgeClass(kategori) {
     return 'badge-default';
 }
 
+// TAHAP 3: Render Repositori dengan Penulis dan Pembatasan Beranda
 function renderRepositori(filterKeyword = "", filterCategory = "Semua"){ 
     let dRepo = [
-        { j:"Kajian Kebijakan UKT Nominal 2026", k:"Kajian Kastrat", t:"12 Juli 2026", l:"#" },
-        { j:"Policy Brief RUU Penyiaran", k:"Policy Brief", t:"05 Juli 2026", l:"#" }
+        { j:"Kajian Kebijakan UKT Nominal 2026", k:"Kajian Kastrat", t:"12 Juli 2026", l:"#", p:"Ahmad Hafiz Arsya", y:"2026", size:"2.5 MB" },
+        { j:"Policy Brief RUU Penyiaran", k:"Policy Brief", t:"05 Juli 2026", l:"#", p:"Divisi Kastrat", y:"2026", size:"1.2 MB" },
+        { j:"Analisis Dampak Locker Room Talk", k:"Artikel", t:"10 Agustus 2025", l:"#", p:"M. Ikhsan Tegar Alamsyah", y:"2025", size:"3.1 MB"}
     ];
     let d = window.globalData.karisma_repo || dRepo; 
     
+    // Di beranda, filter berjalan, tapi maksimal tampilkan 4 agar rapi
     let filteredData = d.filter(x => {
         let matchKeyword = x.j.toLowerCase().includes(filterKeyword.toLowerCase());
         let matchCategory = filterCategory === "Semua" || (x.k && x.k.toLowerCase().includes(filterCategory.toLowerCase()));
         return matchKeyword && matchCategory;
-    });
+    }).slice(0, 4);
 
     let container = document.getElementById('pdfContainer');
     if(!container) return;
 
-    if(document.getElementById('repoCount')) document.getElementById('repoCount').innerText = filteredData.length;
+    if(document.getElementById('repoCount')) document.getElementById('repoCount').innerText = d.length;
 
     if (filteredData.length === 0) {
         container.innerHTML = `
@@ -482,16 +497,17 @@ function renderRepositori(filterKeyword = "", filterCategory = "Semua"){
         container.innerHTML = filteredData.map((x, i) => {
             let originalIndex = d.findIndex(item => item.j === x.j && item.l === x.l);
             return `
-            <div class="doc-card d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div class="doc-card bg-white d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-2" style="border: 1px solid rgba(0,0,0,0.08);">
                 <div class="d-flex align-items-start gap-3">
                     <div class="bg-light rounded-3 p-3 text-danger fs-3 d-none d-md-block shadow-sm">
                         <i class="fa-solid fa-file-pdf"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold text-dark-blue mb-2">${x.j}</h5>
+                        <h5 class="fw-bold text-dark-blue mb-1">${x.j}</h5>
+                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> Penulis: ${x.p || 'Divisi Kastrat'}</p>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <span class="badge-modern ${getBadgeClass(x.k)}">${x.k || 'Dokumen'}</span>
-                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>PDF • ${Math.floor(Math.random() * 2 + 1)}.${Math.floor(Math.random() * 9)} MB</span>
+                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>PDF • ${x.size || '1.5 MB'}</span>
                             <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>${x.t || 'Baru Saja'}</span>
                         </div>
                     </div>
@@ -515,6 +531,65 @@ window.filterRepositori = function() {
     renderRepositori(kw, cat);
 };
 
+// TAHAP 3: Render Halaman Arsip PDF Penuh
+window.filterArsipPdfLengkap = function() {
+    let kw = document.getElementById('searchPdfLengkap') ? document.getElementById('searchPdfLengkap').value : "";
+    let cat = document.getElementById('filterPdfKategori') ? document.getElementById('filterPdfKategori').value : "Semua";
+    let year = document.getElementById('filterPdfTahun') ? document.getElementById('filterPdfTahun').value : "Semua";
+
+    let dRepo = window.globalData.karisma_repo || [
+        { j:"Kajian Kebijakan UKT Nominal 2026", k:"Kajian Kastrat", t:"12 Juli 2026", l:"#", p:"Ahmad Hafiz Arsya", y:"2026", size:"2.5 MB" },
+        { j:"Policy Brief RUU Penyiaran", k:"Policy Brief", t:"05 Juli 2026", l:"#", p:"Divisi Kastrat", y:"2026", size:"1.2 MB" },
+        { j:"Analisis Dampak Locker Room Talk", k:"Artikel", t:"10 Agustus 2025", l:"#", p:"M. Ikhsan Tegar Alamsyah", y:"2025", size:"3.1 MB"}
+    ];
+
+    let filteredData = dRepo.filter(x => {
+        let matchKeyword = x.j.toLowerCase().includes(kw.toLowerCase()) || (x.p && x.p.toLowerCase().includes(kw.toLowerCase()));
+        let matchCategory = cat === "Semua" || (x.k && x.k.toLowerCase().includes(cat.toLowerCase()));
+        let docYear = x.y || (x.t ? x.t.slice(-4) : "2026");
+        let matchYear = year === "Semua" || docYear === year;
+        return matchKeyword && matchCategory && matchYear;
+    });
+
+    let container = document.getElementById('arsipPdfContainer');
+    if(!container) return;
+    
+    if(document.getElementById('pdfLengkapCount')) document.getElementById('pdfLengkapCount').innerText = filteredData.length;
+
+    if (filteredData.length === 0) {
+        container.innerHTML = `<div class="text-center py-5 my-4"><i class="fa-solid fa-folder-open text-muted opacity-25" style="font-size: 4rem; margin-bottom: 20px;"></i><h5 class="fw-bold text-dark-blue">Dokumen Tidak Ditemukan</h5><p class="text-muted">Gunakan kata kunci atau filter lain.</p></div>`;
+    } else {
+        container.innerHTML = filteredData.map((x, i) => {
+            let originalIndex = dRepo.findIndex(item => item.j === x.j && item.l === x.l);
+            return `
+            <div class="doc-card bg-white d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-2 hover-card" style="border: 1px solid rgba(0,0,0,0.08);">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="bg-light rounded-3 p-3 text-danger fs-3 d-none d-md-block shadow-sm">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark-blue mb-1">${x.j}</h5>
+                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> Penulis: ${x.p || 'Divisi Kastrat'}</p>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="badge-modern ${getBadgeClass(x.k)}">${x.k || 'Dokumen'}</span>
+                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>PDF • ${x.size || '1.5 MB'}</span>
+                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>${x.t || 'Baru Saja'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 justify-content-md-end">
+                    <a href="${x.l}" target="_blank" class="btn btn-download px-4"><i class="fa-solid fa-cloud-arrow-down me-1"></i> Download File</a>
+                    <button class="btn btn-delete-modern admin-only" style="display:none;" onclick="hapusRepo(${originalIndex})"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    
+    if(window.role === 'admin' || window.role === 'mod') {
+        document.querySelectorAll('#arsipPdfSection .admin-only').forEach(el => el.style.setProperty('display', 'inline-flex', 'important'));
+    }
+};
+
 // ==========================================
 // 6. ENGINE GAMIFICATION & PURE FIREBASE REALTIME
 // ==========================================
@@ -526,8 +601,6 @@ function renderPersonalDashboard(userData) {
     document.getElementById('userAvatarImg').src = userData.foto;
     document.getElementById('userPoints').innerText = userData.points;
     document.getElementById('userStreak').innerText = userData.streak;
-    
-    // Fitur Badges Pencapaian DOM Update dihapus sesuai arahan Tahap 1.
 }
 
 function checkAndAwardBadges(uid, userData) {
