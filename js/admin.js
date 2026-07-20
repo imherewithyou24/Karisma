@@ -22,7 +22,34 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+    
+    // Panggil render CMS Dashboard saat pertama kali dimuat jika statusnya Admin
+    setTimeout(() => { 
+        if((window.role === 'admin' || window.role === 'mod') && typeof renderCMSDashboard === 'function') {
+            renderCMSDashboard(); 
+        }
+    }, 1500);
 });
+
+// ==========================================
+// AUTO-SAVE DRAFT PENYELAMAT NYAWA
+// ==========================================
+setInterval(() => {
+    let editorModal = document.getElementById('editorModal');
+    if (editorModal && editorModal.classList.contains('show') && redaksiQuill) {
+        let draft = {
+            judul: document.getElementById('editJudul').value,
+            isi: redaksiQuill.root.innerHTML
+        };
+        // Hanya simpan otomatis jika ada ketikan yang lumayan panjang
+        if (draft.judul.length > 3 || draft.isi.length > 20) {
+            localStorage.setItem('karisma_auto_draft', JSON.stringify(draft));
+            let d = new Date();
+            let draftEl = document.getElementById('draftStatus');
+            if(draftEl) draftEl.innerHTML = `<i class="fa-solid fa-check-double text-success me-1"></i> Draft tersimpan otomatis (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')})`;
+        }
+    }
+}, 10000); // Berjalan setiap 10 detik
 
 // ==========================================
 // 1. SISTEM OTORISASI & PROFIL PENGGUNA
@@ -125,6 +152,7 @@ function handleUserLogin(user, isBaruLoginManual = false) {
             document.getElementById('loginBtnText').innerHTML = `<i class="fa-solid fa-crown me-1"></i> Mode Dewa`;
             document.getElementById('loginBtnText').classList.replace('btn-outline-primary', 'btn-danger');
             document.querySelectorAll('.admin-only, .mod-only').forEach(el => el.style.setProperty('display', 'inline-flex', 'important'));
+            if(typeof renderCMSDashboard === 'function') renderCMSDashboard(); // Trigger CMS render
         } else {
             window.role = 'guest'; document.getElementById('mainBody').classList.remove('admin-mode');
             let namaDepan = userData.nama.split(' ')[0];
@@ -209,43 +237,65 @@ async function gantiTemaDewa() {
 }
 
 // ==========================================
-// 3. EDIT DATA INTERAKTIF & MANAJEMEN BERITA (HEADLESS CMS)
+// 3. EDIT DATA INTERAKTIF & MANAJEMEN BERITA (CMS & RICH TEXT)
 // ==========================================
 
-// Fungsi Buka Studio Redaksi Baru
 function tambahBeritaBaru() {
     if(window.role !== 'admin' && window.role !== 'mod') return Swal.fire('Ditolak', 'Hanya Mode Dewa yang bisa mempublikasikan!', 'error');
     
-    editModeBeritaId = null; // Mode Bikin Naskah Baru
-    
+    editModeBeritaId = null; 
     document.getElementById('editJudul').value = '';
     document.getElementById('editKategori').value = 'Kajian Akademik';
     document.getElementById('editPenulis').value = 'Ahmad Hafiz Arsya';
     document.getElementById('editDivisi').value = 'Kastrat';
     
     sampulWebPBase64 = "";
-    document.getElementById('previewCoverContainer').classList.add('d-none');
-    document.getElementById('editCoverFile').value = ''; 
-    
+    if(document.getElementById('previewCoverContainer')) document.getElementById('previewCoverContainer').classList.add('d-none');
+    if(document.getElementById('editCoverFile')) document.getElementById('editCoverFile').value = ''; 
     if(redaksiQuill) redaksiQuill.root.innerHTML = '';
     
-    new bootstrap.Modal(document.getElementById('editorModal')).show();
+    let draftEl = document.getElementById('draftStatus');
+    if(draftEl) draftEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-up me-1"></i> Menunggu ketikan...`;
+
+    // Cek apakah ada draft yang belum dipublish
+    let savedDraft = localStorage.getItem('karisma_auto_draft');
+    if (savedDraft) {
+        Swal.fire({
+            title: 'Draft Ditemukan!',
+            text: "Anda memiliki tulisan yang belum selesai. Lanjutkan yang sebelumnya?",
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Lanjutkan Draft',
+            cancelButtonText: 'Hapus & Buat Naskah Baru',
+            confirmButtonColor: '#0B192C'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let parsed = JSON.parse(savedDraft);
+                document.getElementById('editJudul').value = parsed.judul;
+                if(redaksiQuill) redaksiQuill.root.innerHTML = parsed.isi;
+                new bootstrap.Modal(document.getElementById('editorModal')).show();
+            } else {
+                localStorage.removeItem('karisma_auto_draft');
+                new bootstrap.Modal(document.getElementById('editorModal')).show();
+            }
+        });
+    } else {
+        new bootstrap.Modal(document.getElementById('editorModal')).show();
+    }
 }
 
-// Fungsi Edit Berita Lama pakai Studio Redaksi
-function editBeritaFull() {
+function editBeritaFull(targetId = null) {
     if(window.role !== 'admin' && window.role !== 'mod') return Swal.fire('Ditolak', 'Hanya Mode Dewa!', 'error');
     
-    let id = window.activeNewsId;
+    let id = targetId || window.activeNewsId;
     if(!id) return;
     
-    // Ambil data Array yang kebal bug
     let dbNewsRaw = window.globalData.karisma_news;
     let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw);
     let artikel = dbNews.find(x => x && x.id === id);
     if(!artikel) return;
 
-    editModeBeritaId = id; // Mode Revisi Naskah
+    editModeBeritaId = id; 
     
     document.getElementById('editJudul').value = artikel.title || '';
     document.getElementById('editKategori').value = artikel.badge || 'Kajian Akademik';
@@ -253,10 +303,10 @@ function editBeritaFull() {
     document.getElementById('editDivisi').value = artikel.divisi || 'Kastrat';
     
     sampulWebPBase64 = artikel.img || "";
-    if(sampulWebPBase64) {
+    if(sampulWebPBase64 && document.getElementById('previewCoverImg')) {
         document.getElementById('previewCoverImg').src = sampulWebPBase64;
         document.getElementById('previewCoverContainer').classList.remove('d-none');
-    } else {
+    } else if (document.getElementById('previewCoverContainer')) {
         document.getElementById('previewCoverContainer').classList.add('d-none');
     }
     
@@ -265,59 +315,47 @@ function editBeritaFull() {
     new bootstrap.Modal(document.getElementById('editorModal')).show();
 }
 
-// Mesin Pengolah Gambar HTML5 (Crop Otomatis & Konversi WebP)
 function prosesGambarUpload(event) {
     const file = event.target.files[0];
     if(!file) return;
 
-    if(!file.type.match('image.*')) {
-        return Swal.fire('Gagal', 'Mohon pilih file gambar (JPG/PNG).', 'error');
-    }
+    if(!file.type.match('image.*')) { return Swal.fire('Gagal', 'Mohon pilih file gambar (JPG/PNG).', 'error'); }
 
     const reader = new FileReader();
     reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            // Filter Resolusi
             if(img.width < 1600 || img.height < 900) {
                 Swal.fire({
                     title: 'Resolusi Terlalu Kecil!',
                     html: `Gambar ini berukuran <b>${img.width}x${img.height}px</b>.<br>Minimal yang diizinkan adalah <b>1600x900px</b> agar tajam di HP.`,
-                    icon: 'warning',
-                    confirmButtonColor: '#0B192C'
+                    icon: 'warning', confirmButtonColor: '#0B192C'
                 });
                 return; 
             }
 
-            // Mesin Pemotong Presisi 16:9
             const canvas = document.createElement('canvas');
             const targetRatio = 16 / 9;
             const imgRatio = img.width / img.height;
             
-            let drawWidth = img.width;
-            let drawHeight = img.height;
-            let offsetX = 0;
-            let offsetY = 0;
+            let drawWidth = img.width, drawHeight = img.height, offsetX = 0, offsetY = 0;
 
             if (imgRatio > targetRatio) {
-                drawWidth = img.height * targetRatio;
-                offsetX = (img.width - drawWidth) / 2;
+                drawWidth = img.height * targetRatio; offsetX = (img.width - drawWidth) / 2;
             } else {
-                drawHeight = img.width / targetRatio;
-                offsetY = (img.height - drawHeight) / 2;
+                drawHeight = img.width / targetRatio; offsetY = (img.height - drawHeight) / 2;
             }
 
-            canvas.width = 1280; // Standar optimal Web Modern
-            canvas.height = 720;
+            canvas.width = 1280; canvas.height = 720;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, canvas.width, canvas.height);
 
-            // Simpan sebagai WebP super ringan (Kualitas 80%)
             sampulWebPBase64 = canvas.toDataURL('image/webp', 0.8);
             
-            document.getElementById('previewCoverImg').src = sampulWebPBase64;
-            document.getElementById('previewCoverContainer').classList.remove('d-none');
-            
+            if(document.getElementById('previewCoverImg')) {
+                document.getElementById('previewCoverImg').src = sampulWebPBase64;
+                document.getElementById('previewCoverContainer').classList.remove('d-none');
+            }
             Swal.fire({title: 'Gambar Siap!', text: 'Berhasil dipotong ke 16:9 dan dioptimasi ke WebP.', icon: 'success', timer: 1500, showConfirmButton: false});
         };
         img.src = e.target.result;
@@ -344,7 +382,7 @@ function previewArtikel() {
     });
 }
 
-function simpanArtikel() {
+function simpanArtikel(targetStatus = 'Publish') {
     let judul = document.getElementById('editJudul').value.trim();
     let kategori = document.getElementById('editKategori').value;
     let penulis = document.getElementById('editPenulis').value.trim();
@@ -355,20 +393,22 @@ function simpanArtikel() {
         return Swal.fire('Lengkapi Data', 'Pastikan Judul, Penulis, dan Isi Naskah tidak kosong.', 'warning');
     }
     
-    if(!sampulWebPBase64) {
-        return Swal.fire('Cover Wajib', 'Silakan upload gambar resolusi tinggi terlebih dahulu.', 'warning');
+    if(!sampulWebPBase64 && targetStatus === 'Publish') {
+        return Swal.fire('Cover Wajib', 'Silakan upload thumbnail sebelum mempublikasikan.', 'warning');
     }
 
     let teksMurni = redaksiQuill.getText().trim();
     let ringkasan = teksMurni.substring(0, 150) + "...";
+    
+    let pesanKonfirmasi = targetStatus === 'Publish' ? "Kajian ini akan disebarkan ke publik." : "Kajian akan disimpan secara privat sebagai Draft.";
 
     Swal.fire({
-        title: editModeBeritaId ? 'Simpan Perubahan?' : 'Publikasikan Sekarang?',
-        text: editModeBeritaId ? "Naskah yang direvisi akan segera tayang." : "Kajian ini akan disebarkan ke publik.",
+        title: targetStatus === 'Publish' ? 'Publikasikan Sekarang?' : 'Simpan ke Draft?',
+        text: pesanKonfirmasi,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: editModeBeritaId ? 'Ya, Simpan!' : 'Ya, Publikasikan!',
-        confirmButtonColor: '#198754'
+        confirmButtonText: targetStatus === 'Publish' ? 'Ya, Publikasikan!' : 'Simpan Draft',
+        confirmButtonColor: targetStatus === 'Publish' ? '#198754' : '#6c757d'
     }).then((result) => {
         if (result.isConfirmed) {
             window.db.ref('karisma_news').once('value').then(snap => {
@@ -382,16 +422,14 @@ function simpanArtikel() {
                 if (editModeBeritaId) {
                     let idx = dbNews.findIndex(x => x.id === editModeBeritaId);
                     if(idx > -1) {
-                        dbNews[idx].title = judul;
-                        dbNews[idx].badge = kategori;
-                        dbNews[idx].penulis = penulis;
-                        dbNews[idx].divisi = divisi;
-                        dbNews[idx].img = sampulWebPBase64;
-                        dbNews[idx].short = ringkasan;
-                        dbNews[idx].full = isiHTML;
+                        dbNews[idx].title = judul; dbNews[idx].badge = kategori;
+                        dbNews[idx].penulis = penulis; dbNews[idx].divisi = divisi;
+                        dbNews[idx].img = sampulWebPBase64 || dbNews[idx].img;
+                        dbNews[idx].short = ringkasan; dbNews[idx].full = isiHTML;
+                        dbNews[idx].status = targetStatus;
                         
                         let d = new Date();
-                        dbNews[idx].date = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()} (Revisi)`;
+                        dbNews[idx].last_edited = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
                     }
                 } else {
                     let newId = Date.now();
@@ -401,18 +439,22 @@ function simpanArtikel() {
 
                     let artikelBaru = {
                         id: newId, title: judul, badge: kategori, penulis: penulis, divisi: divisi,
-                        img: sampulWebPBase64, short: ringkasan, full: isiHTML, date: dateString, time: timeString
+                        img: sampulWebPBase64 || '', short: ringkasan, full: isiHTML, date: dateString, time: timeString,
+                        status: targetStatus, last_edited: null
                     };
                     dbNews.unshift(artikelBaru); 
                 }
                 
                 window.db.ref('karisma_news').set(dbNews).then(() => {
+                    localStorage.removeItem('karisma_auto_draft'); 
                     let modalEl = document.getElementById('editorModal');
-                    let modalIns = bootstrap.Modal.getInstance(modalEl);
-                    if(modalIns) modalIns.hide();
-                    
-                    Swal.fire('Berhasil!', editModeBeritaId ? 'Revisi sukses tersinkronisasi.' : 'Kajian resmi mengudara.', 'success').then(() => {
-                        if (editModeBeritaId && typeof renderHalamanBacaPenuh === 'function') {
+                    if(modalEl) {
+                        let modalIns = bootstrap.Modal.getInstance(modalEl);
+                        if(modalIns) modalIns.hide();
+                    }
+                    Swal.fire('Berhasil!', targetStatus === 'Publish' ? 'Kajian resmi mengudara.' : 'Draft aman tersimpan.', 'success').then(() => {
+                        if(typeof renderCMSDashboard === 'function') renderCMSDashboard();
+                        if (editModeBeritaId && typeof renderHalamanBacaPenuh === 'function' && targetStatus === 'Publish') {
                             renderHalamanBacaPenuh(editModeBeritaId); 
                         }
                     });
@@ -423,7 +465,7 @@ function simpanArtikel() {
 }
 
 function hapusBerita(id) {
-    Swal.fire({title: 'Hapus paksa naskah kajian ini?', text: 'Data arsip yang dihapus tidak bisa dikembalikan!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'}).then(r => {
+    Swal.fire({title: 'Hapus naskah ini?', text: 'Data arsip tidak bisa dikembalikan!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'}).then(r => {
         if(r.isConfirmed){ 
             window.db.ref('karisma_news').once('value').then(snap => {
                 let dbNewsRaw = snap.val();
@@ -431,6 +473,7 @@ function hapusBerita(id) {
                 dbNews = dbNews.filter(x => x && x.id !== id); 
                 window.db.ref('karisma_news').set(dbNews); 
                 Swal.fire({title: 'Terhapus!', icon: 'success'});
+                if(typeof renderCMSDashboard === 'function') renderCMSDashboard();
             });
         }
     });
@@ -445,6 +488,51 @@ function hapusKomenDewa(newsId, indexKomen) {
         }
     });
 }
+
+// ==========================================
+// RENDERING CMS DASHBOARD
+// ==========================================
+function renderCMSDashboard() {
+    let tbody = document.getElementById('cmsTableBody');
+    if(!tbody) return;
+    
+    // Ambil data yang aman
+    let dbNews = typeof getSafeNewsArray === 'function' ? getSafeNewsArray() : (window.globalData && window.globalData.karisma_news ? (Array.isArray(window.globalData.karisma_news) ? window.globalData.karisma_news : Object.values(window.globalData.karisma_news)).filter(n => n !== null && n !== undefined) : []);
+    
+    let filterStatusEl = document.getElementById('cmsFilterStatus');
+    let filterStatus = filterStatusEl ? filterStatusEl.value : 'Semua';
+    
+    let filteredNews = dbNews.filter(n => {
+        let status = n.status || 'Publish'; 
+        if(filterStatus === 'Semua') return true;
+        return status === filterStatus;
+    });
+
+    if (filteredNews.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">Belum ada naskah kajian di dalam database.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filteredNews.map(n => {
+        let status = n.status || 'Publish';
+        let badgeColor = status === 'Publish' ? 'bg-success' : (status === 'Draft' ? 'bg-secondary' : 'bg-warning text-dark');
+        let revisiText = n.last_edited ? `<br><small class="text-danger" style="font-size:10px;"><i class="fa-solid fa-pen-rotate me-1"></i>Direvisi: ${n.last_edited}</small>` : '';
+        
+        return `
+        <tr>
+            <td><span class="fw-bold text-dark-blue d-block" style="font-size:0.95rem; line-height:1.2;">${n.title}</span></td>
+            <td><span class="badge bg-light text-dark border">${n.badge || '-'}</span></td>
+            <td class="small fw-medium text-muted">${n.penulis || 'Kastrat'}</td>
+            <td class="small text-muted">${n.date}${revisiText}</td>
+            <td><span class="badge ${badgeColor}">${status}</span></td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm mb-1 mb-md-0" onclick="editBeritaFull(${n.id})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
 
 // ==========================================
 // 4. KOTAK MASUK & INPUT LAYANAN ASPIRASI
