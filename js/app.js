@@ -816,3 +816,120 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+// ==========================================
+// 8. SISTEM OTENTIKASI & LOGIN (FIREBASE AUTH)
+// ==========================================
+
+// Listener Status Login (Pendeteksi Otomatis)
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        window.currentUid = user.uid;
+        
+        // Default role: Jika butuh admin, Anda bisa sesuaikan email di bawah ini
+        window.role = 'mahasiswa'; 
+        
+        // Simpan/Update data user ke Realtime Database untuk sistem Gamifikasi
+        const userRef = window.db.ref('karisma_users/' + user.uid);
+        userRef.once('value').then(snap => {
+            if (!snap.exists()) {
+                userRef.set({
+                    nama: user.displayName || user.email.split('@')[0],
+                    email: user.email,
+                    foto: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || 'M'),
+                    points: 0,
+                    streak: 1,
+                    role: window.role,
+                    badges: ['Pemilih Perdana'],
+                    votesCount: 0,
+                    challengesCount: 0
+                });
+            } else {
+                let d = snap.val();
+                d.foto = user.photoURL || d.foto; 
+                window.role = d.role || window.role; // Timpa role dari database jika user ini adalah admin
+                userRef.set(d);
+                if(typeof renderPersonalDashboard === 'function') renderPersonalDashboard(d);
+            }
+        });
+
+        // 1. Tutup Modal Login
+        let loginModalEl = document.getElementById('loginModal');
+        if(loginModalEl) {
+            let loginModal = bootstrap.Modal.getInstance(loginModalEl);
+            if(loginModal) loginModal.hide();
+        }
+
+        // 2. Ubah tombol Navbar Portal menjadi Nama User
+        let btnPortal = document.getElementById('loginBtnText');
+        if(btnPortal) {
+            btnPortal.innerHTML = `<i class="fa-solid fa-user-check me-1"></i> Halo, ${user.displayName ? user.displayName.split(' ')[0] : 'Kastrat'}`;
+            btnPortal.setAttribute('data-bs-target', '');
+            btnPortal.onclick = logoutSistem;
+            btnPortal.classList.replace('btn-outline-primary', 'btn-primary');
+            btnPortal.classList.add('bg-dark-blue');
+        }
+
+        // 3. Buka gembok Ruang Interaktif
+        if(document.getElementById('authOverlay')) document.getElementById('authOverlay').style.display = 'none';
+
+        // 4. Buka Dashboard jika dia Admin/Mod
+        if((window.role === 'admin' || window.role === 'mod') && typeof renderCMSDashboard === 'function') {
+            document.getElementById('adminDashboard').style.setProperty('display', 'block', 'important');
+            renderCMSDashboard();
+        }
+
+        Swal.fire({title: 'Berhasil Masuk', icon: 'success', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false});
+        
+    } else {
+        // JIKA BELUM LOGIN / LOGOUT
+        window.currentUid = null;
+        window.role = 'guest';
+        
+        let btnPortal = document.getElementById('loginBtnText');
+        if(btnPortal) {
+            btnPortal.innerHTML = `<i class="fa-solid fa-right-to-bracket me-1"></i> Portal`;
+            btnPortal.setAttribute('data-bs-target', '#loginModal');
+            btnPortal.onclick = null;
+            btnPortal.classList.replace('btn-primary', 'btn-outline-primary');
+            btnPortal.classList.remove('bg-dark-blue');
+        }
+        
+        // Kunci lagi ruang interaktif & sembunyikan dashboard admin
+        if(document.getElementById('authOverlay')) document.getElementById('authOverlay').style.display = 'flex';
+        if(document.getElementById('adminDashboard')) document.getElementById('adminDashboard').style.setProperty('display', 'none', 'important');
+    }
+});
+
+// Fungsi Tombol: Login dengan Akun Google
+window.loginDenganGoogle = function() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider).catch((error) => {
+        Swal.fire('Gagal Login', error.message, 'error');
+    });
+};
+
+// Fungsi Tombol: Login dengan Email & Password Khusus
+window.loginDenganEmail = function() {
+    let email = document.getElementById('emailInput').value;
+    let pass = document.getElementById('passwordInput').value;
+    if(!email || !pass) return Swal.fire('Error', 'Data kredensial tidak boleh kosong.', 'warning');
+    
+    firebase.auth().signInWithEmailAndPassword(email, pass).catch((error) => {
+        Swal.fire('Akses Ditolak', 'Email atau password salah!', 'error');
+    });
+};
+
+// Fungsi Tombol: Keluar Sistem
+window.logoutSistem = function() {
+    Swal.fire({
+        title: 'Keluar dari Portal?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Keluar',
+        confirmButtonColor: '#d33'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            firebase.auth().signOut();
+        }
+    });
+};
