@@ -3,6 +3,7 @@
 // ==========================================
 let redaksiQuill;
 let sampulWebPBase64 = "";
+let editModeBeritaId = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     if(document.getElementById('quillEditor')) {
@@ -40,15 +41,14 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
-});
-    
+
     // Panggil render CMS Dashboard saat pertama kali dimuat jika statusnya Admin
     setTimeout(() => { 
         if((window.role === 'admin' || window.role === 'mod') && typeof renderCMSDashboard === 'function') {
             renderCMSDashboard(); 
         }
     }, 1500);
-});
+}); // <-- Penutup DOMContentLoaded yang benar ada di sini
 
 // ==========================================
 // AUTO-SAVE DRAFT PENYELAMAT NYAWA
