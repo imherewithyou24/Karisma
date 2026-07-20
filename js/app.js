@@ -163,39 +163,87 @@ function kembaliKeBeranda() {
     checkURLRouting();
 }
 
-function filterArsip(kategori) {
-    let dbNews = getSafeNewsArray();
-    let container = document.getElementById('arsipContainer');
+function renderFilterArsip(dbNews) {
+    let container = document.getElementById('dynamicArsipFilters');
     if(!container) return;
     
-    document.querySelectorAll('#arsipSection .btn-outline-dark').forEach(btn => {
-        btn.classList.remove('active');
-        if(btn.innerText.trim().toLowerCase() === kategori.toLowerCase() || (kategori === 'Semua' && btn.innerText.trim() === 'Semua')) {
-            btn.classList.add('active');
-        }
+    // Tarik semua kategori unik dari database
+    let categories = ['Semua'];
+    dbNews.forEach(n => {
+        if(n.badge && !categories.includes(n.badge)) categories.push(n.badge);
     });
-
-    let filtered = kategori === 'Semua' ? dbNews : dbNews.filter(n => n.badge && n.badge.toLowerCase().includes(kategori.toLowerCase()));
     
+    // Generate tombol filter
+    container.innerHTML = categories.map(cat => 
+        `<button class="btn btn-sm btn-outline-dark rounded-pill fw-medium" onclick="filterArsip('${cat}', this)">${cat}</button>`
+    ).join('');
+}
+
+function filterArsip(kategori, btnElement = null) {
+    let dbNews = typeof getSafeNewsArray === 'function' ? getSafeNewsArray() : [];
+    let container = document.getElementById('arsipContainer');
+    if(!container) return;
+
+    // Generate filter tombol jika belum ada
+    if(!document.getElementById('dynamicArsipFilters').innerHTML.trim()) {
+        renderFilterArsip(dbNews);
+    }
+
+    // Visual indikator active button
+    if(btnElement) {
+        document.querySelectorAll('#dynamicArsipFilters .btn').forEach(b => b.classList.remove('active', 'btn-dark'));
+        btnElement.classList.add('active', 'btn-dark');
+    } else {
+        // Set 'Semua' aktif saat pertama load
+        document.querySelectorAll('#dynamicArsipFilters .btn').forEach(b => {
+            b.classList.remove('active', 'btn-dark');
+            if(b.innerText === 'Semua') b.classList.add('active', 'btn-dark');
+        });
+    }
+
+    let filtered = kategori === 'Semua' ? dbNews : dbNews.filter(n => n.badge === kategori);
+
     if(filtered.length === 0) {
         container.innerHTML = `<div class="col-12 text-center py-5"><h5 class="text-muted">Tidak ada arsip untuk kategori ${kategori}</h5></div>`;
         return;
     }
-    
+
+    // Render ulang menggunakan layout Horizontal (Kiri Gambar, Kanan Teks) persis halaman Kajian
     container.innerHTML = filtered.map(n => {
-        let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja";
+        let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja dipublikasikan";
+        let ringkasan = n.short || (n.full ? n.full.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : 'Tidak ada ringkasan.');
+        let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
+        let readTime = Math.max(1, Math.ceil(wordCount / 200));
+
         return `
-        <div class="col-md-6 col-lg-4 mb-4">
-            <a href="javascript:void(0)" onclick="bukaBacaBerita(${n.id})" class="related-news-card bg-white h-100 d-flex flex-column text-decoration-none">
-                <img src="${n.img}" class="img-berita-standar" style="height: 180px;">
-                <div class="p-4 d-flex flex-column flex-grow-1">
-                    <div class="mb-2">
-                        <span class="badge ${n.color || 'bg-secondary'}">${n.badge}</span>
-                        <span class="text-muted small ms-2">${dateStr}</span>
+        <div class="col-12 news-card-wrapper mb-4">
+            <div class="card shadow-sm border-0 hover-card rounded-4 bg-white overflow-hidden text-start" style="border: 1px solid rgba(0,0,0,0.05) !important;">
+                <div class="row g-0 align-items-stretch">
+                    <div class="col-md-5 col-lg-4">
+                        <img src="${n.img}" class="img-berita-standar h-100" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
                     </div>
-                    <h5 class="judul-berita-card fw-bold text-dark-blue mb-2 text-dark">${n.title}</h5>
+                    <div class="col-md-7 col-lg-8">
+                        <div class="card-body news-card-body p-4 p-lg-4 d-flex flex-column h-100 justify-content-center">
+                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                <span class="badge-modern ${getBadgeClass(n.badge)}">${n.badge}</span>
+                            </div>
+                            <h4 class="judul-berita-card fw-bold text-dark-blue mb-2">${n.title}</h4>
+                            <p class="card-text text-muted mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.95rem;">${ringkasan}</p>
+                            
+                            <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top">
+                                <div>
+                                    <span class="small fw-bold text-dark-blue d-block">Penulis: ${n.penulis || 'Divisi Kastrat'}</span>
+                                    <span class="small text-muted">${dateStr} • ${readTime} menit membaca</span>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center">
+                                    ${(window.role === 'admin' || window.role === 'mod') ? `<button class="btn btn-sm btn-outline-danger admin-only shadow-sm rounded-pill px-3" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                                    <button class="btn btn-dark-blue btn-baca-selengkapnya rounded-pill fw-bold shadow-sm" onclick="bukaBacaBerita(${n.id})">Baca <i class="fa-solid fa-arrow-right ms-1 d-none d-md-inline"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </a>
+            </div>
         </div>`;
     }).join('');
 }
