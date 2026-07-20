@@ -36,12 +36,12 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 setInterval(() => {
     let editorModal = document.getElementById('editorModal');
-    if (editorModal && editorModal.classList.contains('show') && redaksiQuill) {
+    if (editorModal && editorModal.classList.contains('show') && redaksiQuill && !editModeBeritaId) {
         let draft = {
             judul: document.getElementById('editJudul').value,
             isi: redaksiQuill.root.innerHTML
         };
-        // Hanya simpan otomatis jika ada ketikan yang lumayan panjang
+        // Hanya simpan otomatis jika ada ketikan yang lumayan panjang dan bukan sedang edit berita lama
         if (draft.judul.length > 3 || draft.isi.length > 20) {
             localStorage.setItem('karisma_auto_draft', JSON.stringify(draft));
             let d = new Date();
@@ -54,7 +54,6 @@ setInterval(() => {
 // ==========================================
 // 1. SISTEM OTORISASI & PROFIL PENGGUNA
 // ==========================================
-
 const DAFTAR_ADMIN_KASTRAT = [
     "2410914320014@mhs.ulm.ac.id",
     "2510914210051@mhs.ulm.ac.id",
@@ -171,7 +170,6 @@ function handleUserLogin(user, isBaruLoginManual = false) {
     });
 }
 
-
 // ==========================================
 // 2. LIVE EDITING KONTEN & GAYA FONT (INLINE)
 // ==========================================
@@ -237,7 +235,7 @@ async function gantiTemaDewa() {
 }
 
 // ==========================================
-// 3. EDIT DATA INTERAKTIF & MANAJEMEN BERITA (CMS & RICH TEXT)
+// 3. MANAJEMEN BERITA (CMS & RICH TEXT)
 // ==========================================
 
 function tambahBeritaBaru() {
@@ -254,8 +252,17 @@ function tambahBeritaBaru() {
     if(document.getElementById('editCoverFile')) document.getElementById('editCoverFile').value = ''; 
     if(redaksiQuill) redaksiQuill.root.innerHTML = '';
     
-    let draftEl = document.getElementById('draftStatus');
-    if(draftEl) draftEl.innerHTML = `<i class="fa-solid fa-cloud-arrow-up me-1"></i> Menunggu ketikan...`;
+    // Kembalikan tombol ke mode default (Buat Baru)
+    let footerModal = document.querySelector('#editorModal .modal-footer');
+    if(footerModal) {
+        footerModal.innerHTML = `
+            <div id="draftStatus" class="small text-muted fst-italic"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Menunggu ketikan...</div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="simpanArtikel('Draft')"><i class="fa-solid fa-box-archive me-1"></i> Simpan Draft</button>
+                <button type="button" class="btn btn-success rounded-pill fw-bold px-4" onclick="simpanArtikel('Publish')"><i class="fa-solid fa-paper-plane me-1"></i> Publikasikan</button>
+            </div>
+        `;
+    }
 
     // Cek apakah ada draft yang belum dipublish
     let savedDraft = localStorage.getItem('karisma_auto_draft');
@@ -284,36 +291,51 @@ function tambahBeritaBaru() {
     }
 }
 
-function editBeritaFull(targetId = null) {
-    if(window.role !== 'admin' && window.role !== 'mod') return Swal.fire('Ditolak', 'Hanya Mode Dewa!', 'error');
-    
-    let id = targetId || window.activeNewsId;
-    if(!id) return;
-    
+// BUKA EDIT CMS (MENGGANTIKAN FUNGSI LAMA)
+window.bukaEditCMS = function(id) {
     let dbNewsRaw = window.globalData.karisma_news;
-    let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw);
-    let artikel = dbNews.find(x => x && x.id === id);
-    if(!artikel) return;
+    let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw || {});
+    let n = dbNews.find(x => x && x.id === id);
+
+    if(!n) return Swal.fire('Error', 'Data kajian tidak ditemukan!', 'error');
 
     editModeBeritaId = id; 
-    
-    document.getElementById('editJudul').value = artikel.title || '';
-    document.getElementById('editKategori').value = artikel.badge || 'Kajian Akademik';
-    document.getElementById('editPenulis').value = artikel.penulis || 'Ahmad Hafiz Arsya';
-    document.getElementById('editDivisi').value = artikel.divisi || 'Kastrat';
-    
-    sampulWebPBase64 = artikel.img || "";
-    if(sampulWebPBase64 && document.getElementById('previewCoverImg')) {
-        document.getElementById('previewCoverImg').src = sampulWebPBase64;
-        document.getElementById('previewCoverContainer').classList.remove('d-none');
-    } else if (document.getElementById('previewCoverContainer')) {
-        document.getElementById('previewCoverContainer').classList.add('d-none');
+
+    // 1. Isi Metadata
+    document.getElementById('editJudul').value = n.title || '';
+    document.getElementById('editKategori').value = n.badge || 'Kajian Akademik';
+    document.getElementById('editPenulis').value = n.penulis || 'Ahmad Hafiz Arsya';
+    document.getElementById('editDivisi').value = n.divisi || 'Kastrat';
+
+    // 2. Isi Thumbnail Lama
+    sampulWebPBase64 = n.img || "";
+    if(sampulWebPBase64) {
+        if(document.getElementById('previewCoverImg')) document.getElementById('previewCoverImg').src = sampulWebPBase64;
+        if(document.getElementById('previewCoverContainer')) document.getElementById('previewCoverContainer').classList.remove('d-none');
+    } else {
+        if(document.getElementById('previewCoverContainer')) document.getElementById('previewCoverContainer').classList.add('d-none');
     }
-    
-    if(redaksiQuill) redaksiQuill.root.innerHTML = artikel.full || '';
-    
+
+    // 3. Isi Rich Text Quill
+    if(redaksiQuill) {
+        redaksiQuill.root.innerHTML = n.full || '';
+    }
+
+    // 4. Ubah Fungsi Tombol Simpan
+    let footerModal = document.querySelector('#editorModal .modal-footer');
+    if(footerModal) {
+        footerModal.innerHTML = `
+            <div id="draftStatus" class="small text-muted fst-italic"><i class="fa-solid fa-pen-to-square me-1"></i> Mode Revisi Naskah</div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="simpanArtikel('Draft')"><i class="fa-solid fa-box-archive me-1"></i> Simpan Sbg Draft</button>
+                <button type="button" class="btn btn-success rounded-pill fw-bold px-4" onclick="simpanArtikel('Publish')"><i class="fa-solid fa-paper-plane me-1"></i> Update & Publikasikan</button>
+            </div>
+        `;
+    }
+
+    // 5. Tampilkan Modal
     new bootstrap.Modal(document.getElementById('editorModal')).show();
-}
+};
 
 function prosesGambarUpload(event) {
     const file = event.target.files[0];
@@ -382,7 +404,8 @@ function previewArtikel() {
     });
 }
 
-function simpanArtikel(targetStatus = 'Publish') {
+// MESIN SIMPAN ARTIKEL (BARU & REVISI)
+window.simpanArtikel = function(targetStatus = 'Publish') {
     let judul = document.getElementById('editJudul').value.trim();
     let kategori = document.getElementById('editKategori').value;
     let penulis = document.getElementById('editPenulis').value.trim();
@@ -400,17 +423,24 @@ function simpanArtikel(targetStatus = 'Publish') {
     let teksMurni = redaksiQuill.getText().trim();
     let ringkasan = teksMurni.substring(0, 150) + "...";
     
-    let pesanKonfirmasi = targetStatus === 'Publish' ? "Kajian ini akan disebarkan ke publik." : "Kajian akan disimpan secara privat sebagai Draft.";
+    let isRevisi = editModeBeritaId !== null;
+    let pesanKonfirmasi = targetStatus === 'Publish' ? 
+        (isRevisi ? "Naskah akan diperbarui dan kembali mengudara." : "Kajian ini akan disebarkan ke publik.") : 
+        "Kajian akan disimpan secara privat sebagai Draft.";
 
     Swal.fire({
-        title: targetStatus === 'Publish' ? 'Publikasikan Sekarang?' : 'Simpan ke Draft?',
+        title: targetStatus === 'Publish' ? (isRevisi ? 'Update Naskah?' : 'Publikasikan Sekarang?') : 'Simpan ke Draft?',
         text: pesanKonfirmasi,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: targetStatus === 'Publish' ? 'Ya, Publikasikan!' : 'Simpan Draft',
+        confirmButtonText: targetStatus === 'Publish' ? (isRevisi ? 'Update & Publish' : 'Ya, Publikasikan!') : 'Simpan Draft',
         confirmButtonColor: targetStatus === 'Publish' ? '#198754' : '#6c757d'
     }).then((result) => {
         if (result.isConfirmed) {
+            let d = new Date();
+            let dateString = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
+            let timeString = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
+
             window.db.ref('karisma_news').once('value').then(snap => {
                 let dbNewsRaw = snap.val();
                 let dbNews = [];
@@ -419,42 +449,39 @@ function simpanArtikel(targetStatus = 'Publish') {
                     dbNews = dbNews.filter(n => n !== null && n !== undefined && n.id !== undefined);
                 }
                 
-                if (editModeBeritaId) {
-                    let idx = dbNews.findIndex(x => x.id === editModeBeritaId);
-                    if(idx > -1) {
-                        dbNews[idx].title = judul; dbNews[idx].badge = kategori;
-                        dbNews[idx].penulis = penulis; dbNews[idx].divisi = divisi;
-                        dbNews[idx].img = sampulWebPBase64 || dbNews[idx].img;
-                        dbNews[idx].short = ringkasan; dbNews[idx].full = isiHTML;
-                        dbNews[idx].status = targetStatus;
-                        
-                        let d = new Date();
-                        dbNews[idx].last_edited = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
+                if (isRevisi) {
+                    let targetIndex = dbNews.findIndex(n => n.id === editModeBeritaId);
+                    if (targetIndex !== -1) {
+                        let oldData = dbNews[targetIndex];
+                        dbNews[targetIndex] = {
+                            ...oldData, 
+                            title: judul, badge: kategori, penulis: penulis, divisi: divisi,
+                            img: sampulWebPBase64 || oldData.img, short: ringkasan, full: isiHTML,
+                            status: targetStatus,
+                            last_edited: dateString + ' ' + timeString 
+                        };
                     }
                 } else {
-                    let newId = Date.now();
-                    let d = new Date();
-                    let dateString = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
-                    let timeString = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
-
                     let artikelBaru = {
-                        id: newId, title: judul, badge: kategori, penulis: penulis, divisi: divisi,
-                        img: sampulWebPBase64 || '', short: ringkasan, full: isiHTML, date: dateString, time: timeString,
-                        status: targetStatus, last_edited: null
+                        id: Date.now(), title: judul, badge: kategori, penulis: penulis, divisi: divisi,
+                        img: sampulWebPBase64 || '', short: ringkasan, full: isiHTML, 
+                        date: dateString, time: timeString, status: targetStatus, last_edited: null
                     };
-                    dbNews.unshift(artikelBaru); 
+                    dbNews.unshift(artikelBaru);
                 }
                 
                 window.db.ref('karisma_news').set(dbNews).then(() => {
-                    localStorage.removeItem('karisma_auto_draft'); 
+                    localStorage.removeItem('karisma_auto_draft');
                     let modalEl = document.getElementById('editorModal');
                     if(modalEl) {
                         let modalIns = bootstrap.Modal.getInstance(modalEl);
                         if(modalIns) modalIns.hide();
                     }
-                    Swal.fire('Berhasil!', targetStatus === 'Publish' ? 'Kajian resmi mengudara.' : 'Draft aman tersimpan.', 'success').then(() => {
+                    
+                    Swal.fire('Berhasil!', targetStatus === 'Publish' ? 'Kajian mengudara.' : 'Draft aman tersimpan.', 'success').then(() => {
                         if(typeof renderCMSDashboard === 'function') renderCMSDashboard();
-                        if (editModeBeritaId && typeof renderHalamanBacaPenuh === 'function' && targetStatus === 'Publish') {
+                        if(typeof cariBerita === 'function') cariBerita(); 
+                        if (isRevisi && typeof renderHalamanBacaPenuh === 'function' && targetStatus === 'Publish') {
                             renderHalamanBacaPenuh(editModeBeritaId); 
                         }
                     });
@@ -462,7 +489,7 @@ function simpanArtikel(targetStatus = 'Publish') {
             });
         }
     });
-}
+};
 
 function hapusBerita(id) {
     Swal.fire({title: 'Hapus naskah ini?', text: 'Data arsip tidak bisa dikembalikan!', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'}).then(r => {
@@ -474,6 +501,7 @@ function hapusBerita(id) {
                 window.db.ref('karisma_news').set(dbNews); 
                 Swal.fire({title: 'Terhapus!', icon: 'success'});
                 if(typeof renderCMSDashboard === 'function') renderCMSDashboard();
+                if(typeof cariBerita === 'function') cariBerita();
             });
         }
     });
@@ -496,7 +524,6 @@ function renderCMSDashboard() {
     let tbody = document.getElementById('cmsTableBody');
     if(!tbody) return;
     
-    // Ambil data yang aman
     let dbNews = typeof getSafeNewsArray === 'function' ? getSafeNewsArray() : (window.globalData && window.globalData.karisma_news ? (Array.isArray(window.globalData.karisma_news) ? window.globalData.karisma_news : Object.values(window.globalData.karisma_news)).filter(n => n !== null && n !== undefined) : []);
     
     let filterStatusEl = document.getElementById('cmsFilterStatus');
@@ -526,7 +553,8 @@ function renderCMSDashboard() {
             <td class="small text-muted">${n.date}${revisiText}</td>
             <td><span class="badge ${badgeColor}">${status}</span></td>
             <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm mb-1 mb-md-0" onclick="editBeritaFull(${n.id})"><i class="fa-solid fa-pen"></i></button>
+                <!-- PERUBAHAN: Memanggil window.bukaEditCMS -->
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm mb-1 mb-md-0" onclick="bukaEditCMS(${n.id})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>
             </td>
         </tr>`;
