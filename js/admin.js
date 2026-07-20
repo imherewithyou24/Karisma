@@ -341,44 +341,45 @@ function prosesGambarUpload(event) {
     const file = event.target.files[0];
     if(!file) return;
 
-    if(!file.type.match('image.*')) { return Swal.fire('Gagal', 'Mohon pilih file gambar (JPG/PNG).', 'error'); }
+    if(!file.type.match('image.*')) {
+        return Swal.fire('Gagal', 'Mohon pilih file gambar (JPG/PNG).', 'error');
+    }
 
     const reader = new FileReader();
     reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            if(img.width < 1600 || img.height < 900) {
-                Swal.fire({
-                    title: 'Resolusi Terlalu Kecil!',
-                    html: `Gambar ini berukuran <b>${img.width}x${img.height}px</b>.<br>Minimal yang diizinkan adalah <b>1600x900px</b> agar tajam di HP.`,
-                    icon: 'warning', confirmButtonColor: '#0B192C'
-                });
-                return; 
-            }
-
+            // BATASAN RESOLUSI DIHAPUS. BERAPAPUN UKURANNYA AKAN DIPROSES.
+            
             const canvas = document.createElement('canvas');
             const targetRatio = 16 / 9;
             const imgRatio = img.width / img.height;
             
-            let drawWidth = img.width, drawHeight = img.height, offsetX = 0, offsetY = 0;
+            let drawWidth = img.width;
+            let drawHeight = img.height;
+            let offsetX = 0;
+            let offsetY = 0;
 
             if (imgRatio > targetRatio) {
-                drawWidth = img.height * targetRatio; offsetX = (img.width - drawWidth) / 2;
+                drawWidth = img.height * targetRatio;
+                offsetX = (img.width - drawWidth) / 2;
             } else {
-                drawHeight = img.width / targetRatio; offsetY = (img.height - drawHeight) / 2;
+                drawHeight = img.width / targetRatio;
+                offsetY = (img.height - drawHeight) / 2;
             }
 
-            canvas.width = 1280; canvas.height = 720;
+            // Standarisasi kanvas menjadi HD (1280x720) agar tetap ringan walau upload foto 4K
+            // Namun jika foto asli lebih kecil dari HD, pertahankan ukurannya agar tidak pecah/pixelated ditarik paksa
+            canvas.width = Math.min(1280, drawWidth); 
+            canvas.height = canvas.width / targetRatio;
             const ctx = canvas.getContext('2d');
+            
             ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, canvas.width, canvas.height);
 
             sampulWebPBase64 = canvas.toDataURL('image/webp', 0.8);
             
-            if(document.getElementById('previewCoverImg')) {
-                document.getElementById('previewCoverImg').src = sampulWebPBase64;
-                document.getElementById('previewCoverContainer').classList.remove('d-none');
-            }
-            Swal.fire({title: 'Gambar Siap!', text: 'Berhasil dipotong ke 16:9 dan dioptimasi ke WebP.', icon: 'success', timer: 1500, showConfirmButton: false});
+            document.getElementById('previewCoverImg').src = sampulWebPBase64;
+            document.getElementById('previewCoverContainer').classList.remove('d-none');
         };
         img.src = e.target.result;
     };
