@@ -329,3 +329,48 @@ html {
     color: var(--dark-blue);
     transform: translateX(3px);
 }
+
+/* ========================================= */
+/* UPGRADE: TAMPILAN BERITA & ARSIP (QA)     */
+/* ========================================= */
+
+/* Poin 4: Kecepatan Marquee Diperlambat (30 detik) dan memaksa override */
+.marquee-content {
+    animation: jalan-mulus 30s linear infinite !important;
+}
+
+/* Poin 9: Jarak Antar Card Diperlebar */
+.news-card-wrapper {
+    margin-bottom: 24px; 
+}
+
+/* Poin 7: Tombol Baca Dikecilkan */
+.btn-baca-selengkapnya {
+    font-size: 0.85rem;
+    padding: 6px 18px;
+}
+
+/* Poin 5 & 12: Konsistensi Gambar Mutlak */
+.img-berita-standar {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    background-color: #f8f9fa; /* Placeholder jika gambar telat dimuat */
+}
+
+/* Poin 8: Optimasi Judul di HP (Maksimal 4 Baris) */
+.judul-berita-card {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .judul-berita-card {
+        font-size: 1.1rem;
+        -webkit-line-clamp: 4; /* Beri napas sedikit lebih panjang di HP */
+    }
+}
