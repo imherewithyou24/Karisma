@@ -1,15 +1,15 @@
 // ==========================================
-// INISIALISASI MESIN STUDIO REDAKSI (QUILL.JS)
+// STUDIO REDAKSI: INISIALISASI QUILL & VARIABEL
 // ==========================================
 let redaksiQuill;
-let sampulWebPBase64 = ""; // Tempat menyimpan gambar yang sudah di-crop
-let editModeBeritaId = null; // Penanda apakah sedang buat baru atau revisi
+let sampulWebPBase64 = "";
 
 document.addEventListener("DOMContentLoaded", () => {
     if(document.getElementById('quillEditor')) {
         
-        // 1. HACK INLINE STYLES (SOLUSI BUG ALIGNMENT & FONT TAHAP 2)
-        // Memaksa Quill menggunakan atribut style="" HTML standar
+        // 1. HACK INLINE STYLES (SOLUSI MUTLAK BUG ALIGNMENT & FONT)
+        // Memaksa Quill menggunakan atribut style="" HTML standar, bukan class CSS Quill.
+        
         var AlignStyle = Quill.import('attributors/style/align');
         Quill.register(AlignStyle, true);
 
@@ -21,10 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
         SizeStyle.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px'];
         Quill.register(SizeStyle, true);
 
-        // 2. INISIALISASI EDITOR DENGAN TOOLBAR SUPER LENGKAP
+        // 2. INISIALISASI EDITOR DENGAN TOOLBAR SUPER LENGKAP (ALA MICROSOFT WORD)
         redaksiQuill = new Quill('#quillEditor', {
             theme: 'snow',
-            placeholder: 'Mulai ketik naskah kajian di sini...',
+            placeholder: 'Mulai ketik naskah kajian Kastrat di sini...',
             modules: {
                 toolbar: [
                     [{ 'font': FontStyle.whitelist }, { 'size': SizeStyle.whitelist }],
@@ -35,11 +35,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                     [{ 'indent': '-1'}, { 'indent': '+1' }],
                     ['blockquote', 'link', 'image', 'video'],
-                    ['clean']
+                    ['clean'] // Tombol hapus format
                 ]
             }
         });
     }
+});
     
     // Panggil render CMS Dashboard saat pertama kali dimuat jika statusnya Admin
     setTimeout(() => { 
