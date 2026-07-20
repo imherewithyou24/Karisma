@@ -374,3 +374,41 @@ html {
         -webkit-line-clamp: 4; /* Beri napas sedikit lebih panjang di HP */
     }
 }
+/* ========================================= */
+/* PENYESUAIAN KHUSUS LAYAR HP (MOBILE FIX)  */
+/* ========================================= */
+
+@media (max-width: 768px) {
+    /* 1. Jinakkan Card Berita di HP */
+    .news-card-body {
+        padding: 1.25rem !important; /* Kurangi jarak dalam agar tidak bengkak */
+    }
+    .judul-berita-card {
+        font-size: 1.1rem !important; /* Kecilkan sedikit judulnya */
+        margin-bottom: 0.5rem !important;
+    }
+    .btn-baca-selengkapnya {
+        padding: 0.4rem 1.2rem !important; /* Kecilkan tombol baca */
+        font-size: 0.85rem !important;
+    }
+    .card-text.text-muted {
+        font-size: 0.85rem !important; /* Ringkasan teks lebih kecil */
+        margin-bottom: 1rem !important;
+    }
+    
+    /* 2. Jinakkan Petir Tantangan Kritis */
+    .fa-bolt.position-absolute {
+        font-size: 8rem !important; /* Kecilkan petirnya di HP */
+        top: auto !important;
+        bottom: -10px !important; /* Pindah ke pojok kanan bawah */
+        right: -10px !important;
+        opacity: 0.05 !important; /* Buat lebih transparan agar teks terbaca */
+        z-index: 0 !important;
+    }
+}
+
+/* Pastikan konten tantangan berada di atas petir */
+.z-index-1 {
+    position: relative;
+    z-index: 2 !important;
+}
