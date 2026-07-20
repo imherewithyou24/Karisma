@@ -46,19 +46,14 @@
 </head>
 <body id="mainBody">
 
-    <!-- HOT ISSUE TICKER MODERN (Desain Clean) -->
-    <div class="d-flex align-items-center shadow-sm position-relative overflow-hidden" style="height: 45px; background-color: #ffffff; border-bottom: 1px solid #eaeaea;">
-        <div class="d-flex align-items-center bg-danger text-white px-3 px-md-4 h-100 fw-bold shadow-sm" style="z-index: 2; border-radius: 0 15px 15px 0; letter-spacing: 0.5px;">
-            <i class="fa-solid fa-fire me-2"></i> <span class="d-none d-md-inline">HOT ISSUE</span>
-        </div>
-        
-        <div class="marquee-container flex-grow-1 mx-3" style="height: 100%; display: flex; align-items: center;">
-            <div class="marquee-content editable-text text-dark fw-medium m-0" id="teksMarquee" style="font-size: 0.95rem;">
-                Memuat isu terkini dari Cloud Database Kastrat...
+    <!-- TICKER BERITA MODERN (Tinggi 34px, Merah Elegan #C1121F) -->
+    <div class="d-flex align-items-center shadow-sm position-relative overflow-hidden" style="height: 34px; background-color: #C1121F; border-bottom: 1px solid #9b0f19;">
+        <div class="marquee-container flex-grow-1 px-3" style="height: 100%; display: flex; align-items: center;">
+            <div class="marquee-content editable-text text-white m-0" id="teksMarquee" style="font-size: 0.85rem; letter-spacing: 0.5px;">
+                🔴 Prabowo Lantik Kabinet Baru ... 🔴 Temuan Gas Jumbo di Kaltim ... 🔴 RUU Penyiaran Tuai Kritik ...
             </div>
         </div>
-        
-        <button class="btn btn-sm btn-outline-danger admin-only me-2 shadow-sm bg-white" style="z-index: 2;" onclick="editTeks('teksMarquee', 'Running Text Berita', true)"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-sm text-white admin-only me-2" style="z-index: 2; padding: 2px 8px; opacity: 0.7;" onclick="editTeks('teksMarquee', 'Running Text Berita', true)"><i class="fa-solid fa-pen"></i></button>
     </div>
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
@@ -83,7 +78,7 @@
         </div>
     </nav>
 
-    <!-- RUANGAN HALAMAN BACA BERITA (Disembunyikan secara default, dikontrol oleh app.js via URL) -->
+    <!-- RUANGAN HALAMAN BACA BERITA -->
     <section id="readingSection" class="py-5 bg-white" style="display: none; min-height: 80vh;">
         <div class="container py-4">
             <button class="btn btn-outline-secondary rounded-pill mb-4 shadow-sm" onclick="kembaliKeBeranda()">
@@ -127,6 +122,24 @@
                 <h4 class="fw-bold text-dark-blue mb-4 text-center">Rekomendasi Kajian Lainnya</h4>
                 <div class="row justify-content-center g-4" id="relatedNewsContainer"></div>
             </div>
+        </div>
+    </section>
+
+    <!-- HALAMAN ARSIP PENUH -->
+    <section id="arsipSection" class="py-5 bg-light" style="display: none; min-height: 80vh;">
+        <div class="container py-4">
+            <button class="btn btn-outline-secondary rounded-pill mb-4" onclick="kembaliKeBeranda()"><i class="fa-solid fa-arrow-left me-2"></i> Kembali ke Beranda</button>
+            <h2 class="fw-bold text-dark-blue mb-4">Arsip Seluruh Kajian</h2>
+            
+            <div class="d-flex gap-2 flex-wrap mb-4">
+                <span class="text-muted fw-bold me-2 align-self-center"><i class="fa-solid fa-filter"></i> Filter:</span>
+                <button class="btn btn-sm btn-outline-dark rounded-pill active" onclick="filterArsip('Semua')">Semua</button>
+                <button class="btn btn-sm btn-outline-dark rounded-pill" onclick="filterArsip('Kampus')">Kampus</button>
+                <button class="btn btn-sm btn-outline-dark rounded-pill" onclick="filterArsip('Nasional')">Nasional</button>
+                <button class="btn btn-sm btn-outline-dark rounded-pill" onclick="filterArsip('Psikologi')">Psikologi</button>
+            </div>
+            
+            <div class="row g-4" id="arsipContainer"></div>
         </div>
     </section>
 
@@ -226,9 +239,11 @@
             
             <div class="row justify-content-center mb-5">
                 <div class="col-md-8">
+                    <!-- FITUR PENCARIAN & AUTOCOMPLETE -->
                     <div class="input-group input-group-lg shadow-sm">
                         <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Cari isu, judul, atau kata kunci..." onkeyup="cariBerita()">
+                        <input type="text" id="searchInput" class="form-control border-start-0 ps-0" list="searchSuggestions" placeholder="🔍 Cari Kajian (Contoh: Prabowo, Kampus, UKT)..." onkeyup="cariBerita()">
+                        <datalist id="searchSuggestions"></datalist>
                         <button class="btn btn-primary bg-dark-blue px-4 fw-bold" onclick="cariBerita()">Cari</button>
                     </div>
                     <button class="btn btn-success admin-only d-block mx-auto mt-4 shadow rounded-pill px-4 fw-bold" onclick="tambahBeritaBaru()"><i class="fa-solid fa-plus me-2"></i> Publikasi Kajian Baru</button>
