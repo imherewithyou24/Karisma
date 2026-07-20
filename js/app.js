@@ -273,7 +273,7 @@ function renderBeritaList(dataArray) {
                         <img src="${n.img}" class="img-berita-standar h-100" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
                     </div>
                     <div class="col-md-7 col-lg-8">
-                        <div class="card-body p-4 p-lg-4 d-flex flex-column h-100 justify-content-center">
+                        <div class="card-body news-card-body p-4 p-lg-4 d-flex flex-column h-100 justify-content-center">
                             <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                                 <span class="badge-modern ${getBadgeClass(n.badge)}">${n.badge}</span>
                             </div>
@@ -287,7 +287,7 @@ function renderBeritaList(dataArray) {
                                 </div>
                                 <div class="d-flex gap-2 align-items-center">
                                     <button class="btn btn-sm btn-outline-danger admin-only shadow-sm rounded-pill px-3" style="display:${admDisp} !important;" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>
-                                    <button class="btn btn-dark-blue btn-baca-selengkapnya rounded-pill fw-bold shadow-sm" onclick="bukaBacaBerita(${n.id})">Baca <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                                    <button class="btn btn-dark-blue btn-baca-selengkapnya rounded-pill fw-bold shadow-sm" onclick="bukaBacaBerita(${n.id})">Baca <i class="fa-solid fa-arrow-right ms-1 d-none d-md-inline"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -572,13 +572,13 @@ function renderDailyChallenge() {
     let resBox = document.getElementById('dailyResult');
     
     if(isDone) {
-        document.getElementById('dailyOptionsContainer').innerHTML = `<p class="text-success bg-white p-3 rounded-3 fw-bold"><i class="fa-solid fa-circle-check me-2"></i>Tantangan diselesaikan!</p>`;
+        document.getElementById('dailyOptionsContainer').innerHTML = `<p class="text-success bg-white p-3 rounded-3 fw-bold shadow-sm"><i class="fa-solid fa-circle-check me-2"></i>Tantangan diselesaikan!</p>`;
         resBox.classList.remove('d-none'); resBox.classList.add('bg-light', 'text-dark-blue');
-        resBox.innerHTML = `<strong>💡 Penjelasan:</strong><br>${data.exp}`;
+        resBox.innerHTML = `<strong>💡 Penjelasan:</strong><br><span style="font-size:0.95rem;">${data.exp}</span>`;
     } else {
         resBox.classList.add('d-none');
         document.getElementById('dailyOptionsContainer').innerHTML = data.opts.map((opt, i) => 
-            `<button class="btn btn-outline-light text-start py-2 px-3 rounded-pill" onclick="jawabDaily(${i}, ${data.ans}, '${data.exp}', '${data.date}')">${opt}</button>`
+            `<button class="btn btn-outline-light text-start p-3 rounded-4 w-100 shadow-sm" style="line-height: 1.5; font-size: 0.95rem; white-space: normal;" onclick="jawabDaily(${i}, ${data.ans}, '${data.exp}', '${data.date}')">${opt}</button>`
         ).join('');
     }
 }
