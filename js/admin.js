@@ -7,16 +7,34 @@ let editModeBeritaId = null; // Penanda apakah sedang buat baru atau revisi
 
 document.addEventListener("DOMContentLoaded", () => {
     if(document.getElementById('quillEditor')) {
+        
+        // 1. HACK INLINE STYLES (SOLUSI BUG ALIGNMENT & FONT TAHAP 2)
+        // Memaksa Quill menggunakan atribut style="" HTML standar
+        var AlignStyle = Quill.import('attributors/style/align');
+        Quill.register(AlignStyle, true);
+
+        var FontStyle = Quill.import('attributors/style/font');
+        FontStyle.whitelist = ['arial', 'calibri', 'cambria', 'garamond', 'georgia', 'helvetica', 'inter', 'poppins', 'tahoma', 'times-new-roman', 'verdana'];
+        Quill.register(FontStyle, true);
+
+        var SizeStyle = Quill.import('attributors/style/size');
+        SizeStyle.whitelist = ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px'];
+        Quill.register(SizeStyle, true);
+
+        // 2. INISIALISASI EDITOR DENGAN TOOLBAR SUPER LENGKAP
         redaksiQuill = new Quill('#quillEditor', {
             theme: 'snow',
             placeholder: 'Mulai ketik naskah kajian di sini...',
             modules: {
                 toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
+                    [{ 'font': FontStyle.whitelist }, { 'size': SizeStyle.whitelist }],
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
                     ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
                     [{ 'align': [] }],
                     [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    ['link', 'blockquote'],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    ['blockquote', 'link', 'image', 'video'],
                     ['clean']
                 ]
             }
@@ -291,7 +309,7 @@ function tambahBeritaBaru() {
     }
 }
 
-// BUKA EDIT CMS (MENGGANTIKAN FUNGSI LAMA)
+// BUKA EDIT CMS
 window.bukaEditCMS = function(id) {
     let dbNewsRaw = window.globalData.karisma_news;
     let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw || {});
@@ -368,8 +386,6 @@ function prosesGambarUpload(event) {
                 offsetY = (img.height - drawHeight) / 2;
             }
 
-            // Standarisasi kanvas menjadi HD (1280x720) agar tetap ringan walau upload foto 4K
-            // Namun jika foto asli lebih kecil dari HD, pertahankan ukurannya agar tidak pecah/pixelated ditarik paksa
             canvas.width = Math.min(1280, drawWidth); 
             canvas.height = canvas.width / targetRatio;
             const ctx = canvas.getContext('2d');
@@ -554,7 +570,6 @@ function renderCMSDashboard() {
             <td class="small text-muted">${n.date}${revisiText}</td>
             <td><span class="badge ${badgeColor}">${status}</span></td>
             <td class="text-center">
-                <!-- PERUBAHAN: Memanggil window.bukaEditCMS -->
                 <button class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm mb-1 mb-md-0" onclick="bukaEditCMS(${n.id})"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn btn-sm btn-outline-danger rounded-circle shadow-sm" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>
             </td>
