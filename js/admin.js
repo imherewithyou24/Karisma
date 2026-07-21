@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderCMSDashboard(); 
         }
     }, 1500);
-}); // <-- Penutup DOMContentLoaded yang benar ada di sini
+});
 
 // ==========================================
 // AUTO-SAVE DRAFT PENYELAMAT NYAWA
@@ -195,7 +195,7 @@ function handleUserLogin(user, isBaruLoginManual = false) {
 async function editTeks(elId, label) {
     const el = document.getElementById(elId);
     const currentText = el.innerText.trim();
-    const currentFont = window.globalData['font_' + elId] || '';
+    const currentFont = (window.globalData && window.globalData['font_' + elId]) || '';
 
     const { value: formValues } = await Swal.fire({ 
         title: `Ubah Teks: ${label}`, 
@@ -242,9 +242,10 @@ async function gantiGambar(elId, label) {
 }
 
 async function gantiTemaDewa() {
+    let currentTheme = (window.globalData && window.globalData.karisma_theme) ? window.globalData.karisma_theme : '#0B192C';
     const { value: color } = await Swal.fire({
         title: 'The Architect - Color Controller',
-        html: 'Pilih palet warna identitas baru website:<br><br><input type="color" id="warnaDewa" value="' + (window.globalData.karisma_theme || '#0B192C') + '" style="width:100%; height:60px; border:none; cursor:pointer; border-radius:10px;">',
+        html: 'Pilih palet warna identitas baru website:<br><br><input type="color" id="warnaDewa" value="' + currentTheme + '" style="width:100%; height:60px; border:none; cursor:pointer; border-radius:10px;">',
         showCancelButton: true, 
         confirmButtonText: 'Terapkan Warna',
         confirmButtonColor: '#0B192C',
@@ -322,8 +323,8 @@ function tambahBeritaBaru() {
 
 // BUKA EDIT CMS
 window.bukaEditCMS = function(id) {
-    let dbNewsRaw = window.globalData.karisma_news;
-    let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw || {});
+    let dbNewsRaw = window.globalData && window.globalData.karisma_news ? window.globalData.karisma_news : [];
+    let dbNews = Array.isArray(dbNewsRaw) ? dbNewsRaw : Object.values(dbNewsRaw);
     let n = dbNews.find(x => x && x.id === id);
 
     if(!n) return Swal.fire('Error', 'Data kajian tidak ditemukan!', 'error');
@@ -554,9 +555,11 @@ function hapusBerita(id) {
 function hapusKomenDewa(newsId, indexKomen) {
     Swal.fire({ title: 'Moderasi Komentar: Hapus teks ini?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545' }).then(r => {
         if(r.isConfirmed){ 
-            let d = window.globalData['komentar_berita_'+newsId]; 
-            d.splice(indexKomen, 1); 
-            window.db.ref('komentar_berita_'+newsId).set(d); 
+            let d = window.globalData && window.globalData['komentar_berita_'+newsId] ? window.globalData['komentar_berita_'+newsId] : []; 
+            if(d.length > indexKomen) {
+                d.splice(indexKomen, 1); 
+                window.db.ref('komentar_berita_'+newsId).set(d); 
+            }
         }
     });
 }
@@ -619,7 +622,7 @@ function renderCMSDashboard() {
 async function kirimInbox(tipe) {
     const { value: f } = await Swal.fire({ title: `Form Submit ${tipe}`, html: '<input id="inNama" class="swal2-input" placeholder="Nama Lengkap / Anonim"><textarea id="inPesan" class="swal2-textarea" placeholder="Tulis rumusan gagasan, kritik, opini, atau laporan Anda di sini..."></textarea>', preConfirm: () => [document.getElementById('inNama').value, document.getElementById('inPesan').value] });
     if(f && f[1]) {
-        let d = window.globalData.karisma_inbox || [];
+        let d = (window.globalData && window.globalData.karisma_inbox) ? window.globalData.karisma_inbox : [];
         d.unshift({ tipe: tipe, nama: f[0] || 'Anonim', pesan: f[1], tgl: new Date().toLocaleString() });
         window.db.ref('karisma_inbox').set(d);
         Swal.fire({title: 'Aspirasi Masuk Gembok Cloud!', text: 'Hanya jajaran pimpinan divisi Kastrat yang memegang otoritas membaca pesan ini.', icon: 'success'});
@@ -627,7 +630,7 @@ async function kirimInbox(tipe) {
 }
 
 function bukaInbox() {
-    let d = window.globalData.karisma_inbox || [];
+    let d = (window.globalData && window.globalData.karisma_inbox) ? window.globalData.karisma_inbox : [];
     let html = d.length === 0 ? '<p class="text-center text-muted mt-3 py-4">Kotak masuk aman terkendali (Kosong).</p>' : d.map((p, i) => `
         <div class="card border-0 shadow-sm mb-3">
             <div class="card-body">
@@ -643,10 +646,12 @@ function bukaInbox() {
 }
 
 function hapusInbox(i) { 
-    let d = window.globalData.karisma_inbox; 
-    d.splice(i, 1); 
-    window.db.ref('karisma_inbox').set(d); 
-    setTimeout(bukaInbox, 300); 
+    if(window.globalData && window.globalData.karisma_inbox) {
+        let d = window.globalData.karisma_inbox; 
+        d.splice(i, 1); 
+        window.db.ref('karisma_inbox').set(d); 
+        setTimeout(bukaInbox, 300); 
+    }
 }
 
 // ==========================================
@@ -655,18 +660,20 @@ function hapusInbox(i) {
 async function tambahJanji(){ 
     const {value: t} = await Swal.fire({input: 'text', title: 'Kawal Kebijakan Baru', inputPlaceholder: 'Ketik nama regulasi/janji instansi yang dikawal...'}); 
     if(t){ 
-        let d = window.globalData.karisma_tracker || []; 
+        let d = (window.globalData && window.globalData.karisma_tracker) ? window.globalData.karisma_tracker : []; 
         d.push({t: t, s: "Proses Advokasi", c: "status-proses", i: "fa-spinner fa-spin text-warning"}); 
         window.db.ref('karisma_tracker').set(d);
     } 
 }
-function hapusTracker(i){ let d = window.globalData.karisma_tracker; d.splice(i, 1); window.db.ref('karisma_tracker').set(d); }
+function hapusTracker(i){ if(window.globalData && window.globalData.karisma_tracker) { let d = window.globalData.karisma_tracker; d.splice(i, 1); window.db.ref('karisma_tracker').set(d); } }
 function ubahStatusTracker(i, stat){ 
-    let d = window.globalData.karisma_tracker; 
-    d[i].s = stat; 
-    d[i].c = 'status-selesai'; 
-    d[i].i = 'fa-circle-check text-success'; 
-    window.db.ref('karisma_tracker').set(d); 
+    if(window.globalData && window.globalData.karisma_tracker) {
+        let d = window.globalData.karisma_tracker; 
+        d[i].s = stat; 
+        d[i].c = 'status-selesai'; 
+        d[i].i = 'fa-circle-check text-success'; 
+        window.db.ref('karisma_tracker').set(d); 
+    }
 }
 
 async function tambahAgenda(){ 
@@ -678,14 +685,14 @@ async function tambahAgenda(){
         preConfirm: () => [document.getElementById('a1').value, document.getElementById('a2').value, document.getElementById('a3').value]
     }); 
     if(f && f[1]){ 
-        let d = window.globalData.karisma_agenda || []; 
+        let d = (window.globalData && window.globalData.karisma_agenda) ? window.globalData.karisma_agenda : []; 
         d.push({d: f[0] || 'TBA', t: f[1], ds: f[2] || "Menunggu informasi lanjutan"}); 
         window.db.ref('karisma_agenda').set(d);
         Swal.fire({title: 'Agenda Ditambahkan!', icon: 'success'});
     } 
 }
 
-function hapusAgenda(i){ let d = window.globalData.karisma_agenda; d.splice(i, 1); window.db.ref('karisma_agenda').set(d); }
+function hapusAgenda(i){ if(window.globalData && window.globalData.karisma_agenda) { let d = window.globalData.karisma_agenda; d.splice(i, 1); window.db.ref('karisma_agenda').set(d); } }
 
 // ==========================================
 // TAHAP 3: MESIN CMS PERPUSTAKAAN (PDF)
@@ -693,13 +700,14 @@ function hapusAgenda(i){ let d = window.globalData.karisma_agenda; d.splice(i, 1
 let editModeDocId = null;
 
 window.toggleDocScheduledInputs = function() {
-    let stat = document.getElementById('docStatusPublish').value;
+    let statEl = document.getElementById('docStatusPublish');
+    if(!statEl) return;
+    let stat = statEl.value;
     document.querySelectorAll('.doc-scheduled-input').forEach(el => {
         el.style.display = (stat === 'Scheduled') ? 'block' : 'none';
     });
 };
 
-// Ganti fungsi kuno Swal dengan Modal CMS
 window.tambahDokumen = function() {
     editModeDocId = null;
     document.getElementById('docJudul').value = '';
@@ -719,7 +727,7 @@ window.tambahDokumen = function() {
 };
 
 window.bukaEditDokumen = function(id) {
-    let dRepoRaw = window.globalData.karisma_repo || [];
+    let dRepoRaw = (window.globalData && window.globalData.karisma_repo) ? window.globalData.karisma_repo : [];
     let dRepo = Array.isArray(dRepoRaw) ? dRepoRaw : Object.values(dRepoRaw);
     let doc = dRepo.find(x => x.id === id);
     
@@ -793,7 +801,6 @@ window.simpanDokumen = function() {
     });
 };
 
-// Fungsi Hapus yang sudah dimutakhirkan memakai ID, bukan Index
 window.hapusRepo = function(id) {
     Swal.fire({title: 'Hapus Dokumen?', text: "File ini akan lenyap dari arsip publik.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'}).then(r => {
         if(r.isConfirmed){ 
@@ -813,7 +820,7 @@ window.hapusRepo = function(id) {
 
 async function editDataInteraktif(type) {
     if(type === 'tekateki') {
-        const { value: f } = await Swal.fire({ title: 'Konfigurasi Modul Teka Teki', html: `<input id="tq" class="swal2-input" value="${window.globalData.tekaTekiSoal || ''}" placeholder="Soal Teka-teki"><input id="ta" class="swal2-input" placeholder="Kunci Jawaban Tepat" value="${window.globalData.karisma_tekateki_a || ''}">`, preConfirm: () => [document.getElementById('tq').value, document.getElementById('ta').value]});
+        const { value: f } = await Swal.fire({ title: 'Konfigurasi Modul Teka Teki', html: `<input id="tq" class="swal2-input" value="${(window.globalData && window.globalData.tekaTekiSoal) ? window.globalData.tekaTekiSoal : ''}" placeholder="Soal Teka-teki"><input id="ta" class="swal2-input" placeholder="Kunci Jawaban Tepat" value="${(window.globalData && window.globalData.karisma_tekateki_a) ? window.globalData.karisma_tekateki_a : ''}">`, preConfirm: () => [document.getElementById('tq').value, document.getElementById('ta').value]});
         if(f) { 
             window.db.ref('tekaTekiSoal').set(f[0]); 
             window.db.ref('karisma_tekateki_a').set(f[1]); 
@@ -825,7 +832,7 @@ async function editDataInteraktif(type) {
 }
 
 async function ubahLink(t) {
-    let c = window.globalData.karisma_links || { angket: 'https://forms.gle', lapor: 'https://forms.gle' };
+    let c = (window.globalData && window.globalData.karisma_links) ? window.globalData.karisma_links : { angket: 'https://forms.gle', lapor: 'https://forms.gle' };
     const { value: u } = await Swal.fire({ title: `Ubah Alamat Tautan Form ${t}`, input: 'url', inputValue: c[t], showCancelButton: true });
     if (u) { 
         c[t] = u; 
@@ -839,7 +846,7 @@ async function ubahLink(t) {
 // ==========================================
 
 async function editPollingDewa() {
-    const defaultData = window.globalData.karisma_modern_poll || {q:"", opts:["","",""]};
+    const defaultData = (window.globalData && window.globalData.karisma_modern_poll) ? window.globalData.karisma_modern_poll : {q:"", opts:["","",""]};
     const { value: f } = await Swal.fire({ 
         title: 'Manajemen Live Polling', 
         html: `
