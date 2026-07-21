@@ -88,7 +88,7 @@ if(!sessionStorage.getItem('visited')) {
 }
 
 // ==========================================
-// VAKSIN ANTI-CRASH FIREBASE (ARRAY CONVERTER) & SENSOR DRAFT
+// VAKSIN ANTI-CRASH FIREBASE & MESIN WAKTU SCHEDULED
 // ==========================================
 function getSafeNewsArray() {
     let raw = window.globalData.karisma_news;
@@ -96,11 +96,22 @@ function getSafeNewsArray() {
     let arr = Array.isArray(raw) ? raw : Object.values(raw);
     let aman = arr.filter(n => n !== null && n !== undefined && n.id !== undefined);
     
-    // Publik hanya melihat yang berstatus Publish (atau data lama yang tidak ada statusnya)
+    // Logika Publikasi Otomatis (Mesin Waktu)
+    let sekarang = new Date();
+    
     if(window.role !== 'admin' && window.role !== 'mod') {
-        return aman.filter(n => n.status === 'Publish' || !n.status);
+        return aman.filter(n => {
+            if (!n.status || n.status === 'Publish') return true;
+            
+            // Jika Scheduled, cek apakah waktunya sudah lewat!
+            if (n.status === 'Scheduled' && n.scheduled_date && n.scheduled_time) {
+                let waktuJadwal = new Date(`${n.scheduled_date}T${n.scheduled_time}`);
+                if (sekarang >= waktuJadwal) return true; // Tembus ke publik!
+            }
+            return false; // Sembunyikan jika masih Draft atau belum waktunya
+        });
     }
-    // Admin & Mod melihat semuanya (termasuk Draft)
+    // Admin & Mod melihat semuanya
     return aman;
 }
 
