@@ -40,7 +40,9 @@ body.dark-mode { background-color: #121212; color: #e0e0e0; }
 .timeline { border-left: 4px solid var(--accent-gold); padding-left: 20px; position: relative; margin-left: 20px;}
 .timeline-item { margin-bottom: 25px; position: relative; }
 .timeline-item::before { content: ''; position: absolute; left: -30px; top: 5px; width: 16px; height: 16px; border-radius: 50%; background: var(--dark-blue); border: 3px solid #fff; box-shadow: 0 0 0 3px var(--accent-gold); }
-.news-ticker { background-color: #dc3545; color: white; padding: 8px 15px; font-size: 0.9rem; display: flex; align-items: center; }
+
+/* FIX BUG IOS: PEMBUNGKUS BAR MERAH DIPAKSA 100% */
+.news-ticker { background-color: #dc3545; color: white; padding: 8px 15px; font-size: 0.9rem; display: flex; align-items: center; width: 100%; max-width: 100vw; box-sizing: border-box; }
 .news-ticker span { font-weight: bold; margin-right: 15px; background: #212529; padding: 3px 10px; border-radius: 4px; white-space: nowrap; cursor: pointer;}
 .carousel-control-prev-icon, .carousel-control-next-icon { filter: invert(1); }
 .carousel-item { z-index: 10 !important; position: relative; min-height: 400px; } 
@@ -60,7 +62,7 @@ body.dark-mode { background-color: #121212; color: #e0e0e0; }
 .status-proses { border-left-color: #ffc107; }
 .status-mandek { border-left-color: #dc3545; }
 /* ========================================= */
-/* FIX BUG: TIMELINE AGENDA PERGERAKAN       */
+/* FIX BUG: TIMELINE AGENDA PERGERAKAN        */
 /* ========================================= */
 .timeline {
     border-left: 4px solid #FFC107;
