@@ -687,26 +687,129 @@ async function tambahAgenda(){
 
 function hapusAgenda(i){ let d = window.globalData.karisma_agenda; d.splice(i, 1); window.db.ref('karisma_agenda').set(d); }
 
-async function tambahDokumen(){ 
-    const {value: f} = await Swal.fire({
-        title: 'Unggah Naskah PDF',
-        html: '<input id="r1" class="swal2-input" placeholder="Judul Dokumen Naskah">' +
-              '<select id="rKategori" class="swal2-select"><option value="Kajian Kastrat">Kajian Kastrat</option><option value="Policy Brief">Policy Brief</option><option value="Riset">Riset</option><option value="Artikel">Artikel</option></select>' +
-              '<input id="r2" class="swal2-input" placeholder="Link Google Drive PDF Resmi">', 
-        preConfirm: () => [document.getElementById('r1').value, document.getElementById('r2').value, document.getElementById('rKategori').value]
-    }); 
-    if(f && f[0]){ 
-        let d = window.globalData.karisma_repo || []; 
-        const today = new Date();
-        const options = { day: 'numeric', month: 'long', year: 'numeric' };
-        const formattedDate = today.toLocaleDateString('id-ID', options);
+// ==========================================
+// TAHAP 3: MESIN CMS PERPUSTAKAAN (PDF)
+// ==========================================
+let editModeDocId = null;
 
-        d.unshift({j: f[0], k: f[2], t: formattedDate, l: f[1]}); 
-        window.db.ref('karisma_repo').set(d);
-        Swal.fire({title: 'Dokumen Mengudara!', icon: 'success'});
-    } 
-}
-function hapusRepo(i){ let d = window.globalData.karisma_repo; d.splice(i, 1); window.db.ref('karisma_repo').set(d); }
+window.toggleDocScheduledInputs = function() {
+    let stat = document.getElementById('docStatusPublish').value;
+    document.querySelectorAll('.doc-scheduled-input').forEach(el => {
+        el.style.display = (stat === 'Scheduled') ? 'block' : 'none';
+    });
+};
+
+// Ganti fungsi kuno Swal dengan Modal CMS
+window.tambahDokumen = function() {
+    editModeDocId = null;
+    document.getElementById('docJudul').value = '';
+    document.getElementById('docPenulis').value = 'Ahmad Hafiz Arsya';
+    document.getElementById('docOrganisasi').value = 'Kastrat HIMA Psikologi';
+    document.getElementById('docKategori').value = 'Kajian Kastrat';
+    document.getElementById('docTahun').value = new Date().getFullYear();
+    document.getElementById('docLink').value = '';
+    document.getElementById('docThumbnail').value = '';
+    document.getElementById('docDeskripsi').value = '';
+    document.getElementById('docStatusPublish').value = 'Publish';
+    document.getElementById('docJadwalTanggal').value = '';
+    document.getElementById('docJadwalJam').value = '';
+    toggleDocScheduledInputs();
+    
+    new bootstrap.Modal(document.getElementById('docEditorModal')).show();
+};
+
+window.bukaEditDokumen = function(id) {
+    let dRepoRaw = window.globalData.karisma_repo || [];
+    let dRepo = Array.isArray(dRepoRaw) ? dRepoRaw : Object.values(dRepoRaw);
+    let doc = dRepo.find(x => x.id === id);
+    
+    if(!doc) return Swal.fire('Error', 'Dokumen tidak ditemukan!', 'error');
+
+    editModeDocId = id;
+    document.getElementById('docJudul').value = doc.j || '';
+    document.getElementById('docPenulis').value = doc.p || '';
+    document.getElementById('docOrganisasi').value = doc.org || 'HIMA Psikologi';
+    document.getElementById('docKategori').value = doc.k || 'Kajian Kastrat';
+    document.getElementById('docTahun').value = doc.y || '';
+    document.getElementById('docLink').value = doc.l || '';
+    document.getElementById('docThumbnail').value = doc.thumb || '';
+    document.getElementById('docDeskripsi').value = doc.desc || '';
+    document.getElementById('docStatusPublish').value = doc.status || 'Publish';
+    document.getElementById('docJadwalTanggal').value = doc.scheduled_date || '';
+    document.getElementById('docJadwalJam').value = doc.scheduled_time || '';
+    toggleDocScheduledInputs();
+    
+    new bootstrap.Modal(document.getElementById('docEditorModal')).show();
+};
+
+window.simpanDokumen = function() {
+    let j = document.getElementById('docJudul').value.trim();
+    let p = document.getElementById('docPenulis').value.trim();
+    let org = document.getElementById('docOrganisasi').value.trim();
+    let k = document.getElementById('docKategori').value;
+    let y = document.getElementById('docTahun').value;
+    let l = document.getElementById('docLink').value.trim();
+    let thumb = document.getElementById('docThumbnail').value.trim();
+    let desc = document.getElementById('docDeskripsi').value.trim();
+    let statusPub = document.getElementById('docStatusPublish').value;
+    let tgl = document.getElementById('docJadwalTanggal').value;
+    let jam = document.getElementById('docJadwalJam').value;
+
+    if(!j || !l) return Swal.fire('Data Kurang', 'Judul Dokumen dan Link PDF wajib diisi.', 'warning');
+    if(statusPub === 'Scheduled' && (!tgl || !jam)) return Swal.fire('Jadwal Kosong', 'Tentukan tanggal dan jam tayang!', 'warning');
+
+    let todayStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    window.db.ref('karisma_repo').once('value').then(snap => {
+        let dRepoRaw = snap.val() || [];
+        let dRepo = Array.isArray(dRepoRaw) ? dRepoRaw : Object.values(dRepoRaw);
+        
+        let docData = {
+            j: j, p: p, org: org, k: k, y: y, l: l, thumb: thumb, desc: desc,
+            status: statusPub, scheduled_date: tgl, scheduled_time: jam, t: todayStr
+        };
+
+        if (editModeDocId) {
+            let idx = dRepo.findIndex(x => x.id === editModeDocId);
+            if(idx !== -1) {
+                docData.id = editModeDocId;
+                docData.t = dRepo[idx].t; // Pertahankan tanggal awal upload
+                dRepo[idx] = docData;
+            }
+        } else {
+            docData.id = Date.now();
+            dRepo.unshift(docData);
+        }
+
+        window.db.ref('karisma_repo').set(dRepo).then(() => {
+            let modalIns = bootstrap.Modal.getInstance(document.getElementById('docEditorModal'));
+            if(modalIns) modalIns.hide();
+            Swal.fire('Sukses!', 'Arsip berhasil diamankan ke Cloud.', 'success');
+            
+            // Refresh Layar
+            if(typeof filterRepositori === 'function') filterRepositori();
+            if(typeof filterArsipPdfLengkap === 'function' && document.getElementById('arsipPdfSection').style.display !== 'none') filterArsipPdfLengkap();
+        });
+    });
+};
+
+// Fungsi Hapus yang sudah dimutakhirkan memakai ID, bukan Index
+window.hapusRepo = function(id) {
+    Swal.fire({title: 'Hapus Dokumen?', text: "File ini akan lenyap dari arsip publik.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545'}).then(r => {
+        if(r.isConfirmed){ 
+            window.db.ref('karisma_repo').once('value').then(snap => {
+                let dRepoRaw = snap.val() || [];
+                let dRepo = Array.isArray(dRepoRaw) ? dRepoRaw : Object.values(dRepoRaw);
+                dRepo = dRepo.filter(x => x.id !== id);
+                window.db.ref('karisma_repo').set(dRepo).then(() => {
+                    Swal.fire('Terhapus!', '', 'success');
+                    if(typeof filterRepositori === 'function') filterRepositori();
+                    if(typeof filterArsipPdfLengkap === 'function' && document.getElementById('arsipPdfSection').style.display !== 'none') filterArsipPdfLengkap();
+                });
+            });
+        }
+    });
+};
 
 async function editDataInteraktif(type) {
     if(type === 'tekateki') {
