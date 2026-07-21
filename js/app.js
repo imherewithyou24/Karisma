@@ -927,13 +927,22 @@ window.loginDenganGoogle = function() {
     });
 };
 
-window.loginDenganEmail = function() {
-    let email = document.getElementById('emailInput').value;
-    let pass = document.getElementById('passwordInput').value;
-    if(!email || !pass) return Swal.fire('Error', 'Data kredensial tidak boleh kosong.', 'warning');
-    
-    firebase.auth().signInWithEmailAndPassword(email, pass).catch((error) => {
-        Swal.fire('Akses Ditolak', 'Email atau password salah!', 'error');
+// FUNGSI LOGIN GOOGLE (ANTI-BLOKIR SAFARI/IOS)
+window.loginDenganGoogle = function() {
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+    // PENTING: Untuk iPhone/Safari, eksekusi HARUS sinkron (tanpa jeda Swal.fire)
+    // agar Safari tidak memblokir Cookie dan Popup Auth.
+    firebase.auth().signInWithPopup(googleProvider).then((result) => {
+        handleUserLogin(result.user, true);
+    }).catch((error) => {
+        if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+            // Jika Popup diblokir (khas iOS ketat), paksa gunakan mode Redirect secara langsung
+            firebase.auth().signInWithRedirect(googleProvider);
+        } else {
+            Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
+        }
     });
 };
 
