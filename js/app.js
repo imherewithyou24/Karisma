@@ -184,29 +184,36 @@ function kembaliKeBeranda() {
     checkURLRouting();
 }
 
+// ==========================================
+// 1. TAMBAHKAN FUNGSI BARU INI (Untuk Tarik Filter Dinamis dari Firebase)
+// ==========================================
 function renderFilterArsip(dbNews) {
     let container = document.getElementById('dynamicArsipFilters');
     if(!container) return;
     
-    let categories = ['Semua'];
-    dbNews.forEach(n => {
-        if(n.badge && !categories.includes(n.badge)) categories.push(n.badge);
-    });
+    // Ambil Kategori Unik dari Database Firebase menggunakan Set()
+    let categoriesSet = new Set(dbNews.map(n => n.badge).filter(Boolean));
+    let categories = ['Semua', ...Array.from(categoriesSet)];
     
     container.innerHTML = categories.map(cat => 
         `<button class="btn btn-sm btn-outline-dark rounded-pill fw-medium" onclick="filterArsip('${cat}', this)">${cat}</button>`
     ).join('');
 }
 
+// ==========================================
+// 2. TIMPA FUNGSI LAMA INI (Tampilan Card menyesuaikan Carousel)
+// ==========================================
 function filterArsip(kategori, btnElement = null) {
     let dbNews = typeof getSafeNewsArray === 'function' ? getSafeNewsArray() : [];
     let container = document.getElementById('arsipContainer');
     if(!container) return;
 
+    // Panggil render filter jika tombol filter belum ada
     if(!document.getElementById('dynamicArsipFilters').innerHTML.trim()) {
         renderFilterArsip(dbNews);
     }
 
+    // Indikator UI Tombol Aktif
     if(btnElement) {
         document.querySelectorAll('#dynamicArsipFilters .btn').forEach(b => b.classList.remove('active', 'btn-dark'));
         btnElement.classList.add('active', 'btn-dark');
@@ -217,45 +224,36 @@ function filterArsip(kategori, btnElement = null) {
         });
     }
 
+    // Proses Filter
     let filtered = kategori === 'Semua' ? dbNews : dbNews.filter(n => n.badge === kategori);
 
     if(filtered.length === 0) {
-        container.innerHTML = `<div class="col-12 text-center py-5"><h5 class="text-muted">Tidak ada arsip untuk kategori ${kategori}</h5></div>`;
+        container.innerHTML = `<div class="w-100 text-center py-5"><h5 class="text-muted">Tidak ada arsip untuk kategori ${kategori}</h5></div>`;
         return;
     }
 
+    // Render HTML Card dengan proporsi spesifik untuk Carousel
     container.innerHTML = filtered.map(n => {
-        let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja dipublikasikan";
-        let ringkasan = n.short || (n.full ? n.full.replace(/<[^>]*>?/gm, '').substring(0, 120) + '...' : 'Tidak ada ringkasan.');
-        let wordCount = n.full ? n.full.replace(/<[^>]*>?/gm, '').split(' ').length : 0;
-        let readTime = Math.max(1, Math.ceil(wordCount / 200));
+        let dateStr = n.date && n.date !== "Baru Saja" ? n.date : "Baru Saja";
+        let ringkasan = n.short || (n.full ? n.full.replace(/<[^>]*>?/gm, '').substring(0, 100) + '...' : 'Tidak ada ringkasan.');
 
         return `
-        <div class="col-12 news-card-wrapper mb-4">
-            <div class="card shadow-sm border-0 hover-card rounded-4 bg-white overflow-hidden text-start" style="border: 1px solid rgba(0,0,0,0.05) !important;">
-                <div class="row g-0 align-items-stretch">
-                    <div class="col-md-5 col-lg-4">
-                        <img src="${n.img}" class="img-berita-standar h-100" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
+        <div class="news-card-wrapper hover-card">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100 d-flex flex-column text-start" style="border: 1px solid rgba(0,0,0,0.05) !important;">
+                <img src="${n.img}" class="card-img-top w-100" style="height: 200px; object-fit: cover; border-top-left-radius: 1rem; border-top-right-radius: 1rem;" onerror="this.src='https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=600'">
+                <div class="card-body p-4 d-flex flex-column flex-grow-1">
+                    <div class="mb-3">
+                        <span class="badge-modern ${getBadgeClass(n.badge)}">${n.badge}</span>
                     </div>
-                    <div class="col-md-7 col-lg-8">
-                        <div class="card-body news-card-body p-4 p-lg-4 d-flex flex-column h-100 justify-content-center">
-                            <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                                <span class="badge-modern ${getBadgeClass(n.badge)}">${n.badge}</span>
-                            </div>
-                            <h4 class="judul-berita-card fw-bold text-dark-blue mb-2">${n.title}</h4>
-                            <p class="card-text text-muted mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.95rem;">${ringkasan}</p>
-                            
-                            <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top">
-                                <div>
-                                    <span class="small fw-bold text-dark-blue d-block">Penulis: ${n.penulis || 'Divisi Kastrat'}</span>
-                                    <span class="small text-muted">${dateStr} • ${readTime} menit membaca</span>
-                                </div>
-                                <div class="d-flex gap-2 align-items-center">
-                                    ${(window.role === 'admin' || window.role === 'mod') ? `<button class="btn btn-sm btn-outline-danger admin-only shadow-sm rounded-pill px-3" onclick="hapusBerita(${n.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
-                                    <button class="btn btn-dark-blue btn-baca-selengkapnya rounded-pill fw-bold shadow-sm" onclick="bukaBacaBerita(${n.id})">Baca <i class="fa-solid fa-arrow-right ms-1 d-none d-md-inline"></i></button>
-                                </div>
-                            </div>
+                    <h5 class="judul-berita-card fw-bold text-dark-blue mb-2" style="font-size: 1.15rem; line-height:1.4;">${n.title}</h5>
+                    <p class="card-text text-muted mb-4 small" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${ringkasan}</p>
+                    
+                    <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="small fw-bold text-dark-blue d-block text-truncate" style="max-width: 150px;">${n.penulis || 'Kastrat'}</span>
+                            <span class="small text-muted" style="font-size: 0.75rem;">${dateStr}</span>
                         </div>
+                        <button class="btn btn-dark-blue btn-sm rounded-pill fw-bold shadow-sm px-4 py-2" onclick="bukaBacaBerita(${n.id})">Baca</button>
                     </div>
                 </div>
             </div>
