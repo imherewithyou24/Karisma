@@ -114,6 +114,29 @@ function getSafeNewsArray() {
     // Admin & Mod melihat semuanya
     return aman;
 }
+function getSafeRepoArray() {
+    let raw = window.globalData.karisma_repo;
+    if (!raw) return [];
+    let arr = Array.isArray(raw) ? raw : Object.values(raw);
+    
+    // Beri ID sementara untuk data lama yang belum punya ID agar tombol edit/hapus tetap jalan
+    arr.forEach((n, i) => { if(!n.id) n.id = 888000 + i; });
+    
+    let aman = arr.filter(n => n !== null && n !== undefined && n.id !== undefined);
+    let sekarang = new Date();
+    
+    if(window.role !== 'admin' && window.role !== 'mod') {
+        return aman.filter(n => {
+            if (!n.status || n.status === 'Publish') return true;
+            if (n.status === 'Scheduled' && n.scheduled_date && n.scheduled_time) {
+                let waktuJadwal = new Date(`${n.scheduled_date}T${n.scheduled_time}`);
+                if (sekarang >= waktuJadwal) return true;
+            }
+            return false;
+        });
+    }
+    return aman;
+}
 
 // ==========================================
 // 3. MESIN ROUTING URL, HALAMAN BACA & ARSIP
