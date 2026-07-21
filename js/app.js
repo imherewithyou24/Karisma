@@ -959,3 +959,11 @@ window.logoutSistem = function() {
         }
     });
 };
+// ==========================================
+// FIX BUG IOS: PAKSA SAFARI RE-RENDER HEADER MERAH
+// ==========================================
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, 500); // Menendang ulang perhitungan layar setelah 0.5 detik
+});
