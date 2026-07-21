@@ -586,7 +586,7 @@
       </div>
     </div>
 
-    <!-- MODAL STUDIO REDAKSI -->
+    <!-- MODAL STUDIO REDAKSI (TAHAP 2: SCHEDULED PUBLISH & PENULIS BEBAS) -->
     <div class="modal fade" id="editorModal" data-bs-backdrop="static" tabindex="-1">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content rounded-4 border-0 shadow-lg">
@@ -615,14 +615,64 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Nama Penulis</label>
+                            <label class="form-label small fw-bold text-muted">Nama Penulis (Bebas Ubah)</label>
                             <input type="text" id="editPenulis" class="form-control shadow-sm border-0 py-2" value="Ahmad Hafiz Arsya">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-bold text-muted">Divisi</label>
-                            <input type="text" id="editDivisi" class="form-control shadow-sm border-0 py-2" value="Kastrat">
+                            <label class="form-label small fw-bold text-muted">Divisi / Instansi</label>
+                            <input type="text" id="editDivisi" class="form-control shadow-sm border-0 py-2" value="Kastrat HIMA Psikologi">
                         </div>
                     </div>
+
+                    <!-- THUMBNAIL UPLOADER -->
+                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">2. Cover / Thumbnail (Otomatis 16:9)</h6>
+                    <div class="mb-5 bg-white p-4 rounded-4 shadow-sm border text-center position-relative">
+                        <input type="file" id="editCoverFile" class="form-control d-none" accept="image/*" onchange="prosesGambarUpload(event)">
+                        <button class="btn btn-outline-primary rounded-pill px-4 fw-bold mb-3" onclick="document.getElementById('editCoverFile').click()"><i class="fa-solid fa-upload me-2"></i>Pilih Gambar Cover</button>
+                        <p class="small text-muted mb-3">Resolusi bebas. Sistem akan otomatis memotong (crop) menjadi 16:9 dan mengoptimasi ukurannya ke format WebP.</p>
+                        
+                        <div id="previewCoverContainer" class="d-none">
+                            <hr>
+                            <p class="small fw-bold text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i> Preview Hasil Crop (16:9)</p>
+                            <img id="previewCoverImg" src="" class="img-fluid rounded-3 shadow-sm mx-auto d-block" style="max-width: 100%; aspect-ratio: 16/9; object-fit: cover;">
+                        </div>
+                    </div>
+
+                    <!-- ISI ARTIKEL (RICH TEXT) -->
+                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">3. Naskah Lengkap</h6>
+                    <div class="bg-white rounded-4 shadow-sm border overflow-hidden mb-5">
+                        <div id="quillEditor" style="height: 400px; font-size: 1.1rem;"></div>
+                    </div>
+
+                    <!-- PENGATURAN PUBLIKASI (DRAFT, PUBLISH, SCHEDULE) -->
+                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">4. Pengaturan Publikasi</h6>
+                    <div class="row g-3 bg-white p-4 rounded-4 shadow-sm border">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Status</label>
+                            <select id="editStatusPublish" class="form-select shadow-sm border-0 py-2" onchange="toggleScheduledInputs()">
+                                <option value="Publish">Langsung Publikasi (Publish)</option>
+                                <option value="Scheduled">Jadwalkan (Scheduled)</option>
+                                <option value="Draft">Simpan Sbg Draft (Draft)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 scheduled-input" style="display: none;">
+                            <label class="form-label small fw-bold text-muted">Tanggal Tayang</label>
+                            <input type="date" id="editJadwalTanggal" class="form-control shadow-sm border-0 py-2">
+                        </div>
+                        <div class="col-md-4 scheduled-input" style="display: none;">
+                            <label class="form-label small fw-bold text-muted">Jam Tayang (WITA)</label>
+                            <input type="time" id="editJadwalJam" class="form-control shadow-sm border-0 py-2">
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-white border-top-0 py-3 d-flex justify-content-between align-items-center w-100">
+                    <div id="draftStatus" class="small text-muted fst-italic"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Auto-save aktif...</div>
+                    <button type="button" class="btn btn-dark-blue rounded-pill fw-bold px-5 py-2 shadow-sm" onclick="simpanArtikel()"><i class="fa-solid fa-floppy-disk me-2"></i> Eksekusi Naskah</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
                     <!-- THUMBNAIL UPLOADER -->
                     <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">2. Cover / Thumbnail (Otomatis 16:9)</h6>
