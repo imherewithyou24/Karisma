@@ -101,12 +101,8 @@ function loginDenganGoogle() {
     googleProvider.setCustomParameters({ prompt: 'select_account' });
 
     if (isIOS) {
-        Swal.fire({
-            title: 'Membuka Portal...',
-            text: 'Mengarahkan dengan aman khusus perangkat Apple...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
+        // HARUS LANGSUNG REDIRECT! Jangan pakai Swal.fire / animasi loading di sini
+        // agar sistem keamanan Safari iPhone tidak memblokir Cookie Login.
         firebase.auth().signInWithRedirect(googleProvider);
     } else {
         firebase.auth().signInWithPopup(googleProvider)
@@ -114,12 +110,8 @@ function loginDenganGoogle() {
             handleUserLogin(result.user, true);
         }).catch((error) => {
             if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
-                Swal.fire({
-                    title: 'Akses Dicekal',
-                    text: 'Browser Anda memblokir jendela Login Google. Silakan matikan pemblokir pop-up.',
-                    icon: 'warning',
-                    confirmButtonColor: '#0B192C'
-                });
+                // Jika popup diblokir oleh browser laptop, paksa lewat jalur redirect
+                firebase.auth().signInWithRedirect(googleProvider);
             } else {
                 Swal.fire({title: 'Gagal Autentikasi', text: error.message, icon: 'error'});
             }
