@@ -254,8 +254,18 @@ async function gantiTemaDewa() {
 }
 
 // ==========================================
-// 3. MANAJEMEN BERITA (CMS & RICH TEXT)
+// 3. MANAJEMEN BERITA (CMS & RICH TEXT) - TAHAP 2
 // ==========================================
+
+// Fungsi Untuk UI Scheduled
+window.toggleScheduledInputs = function() {
+    let statEl = document.getElementById('editStatusPublish');
+    if(!statEl) return;
+    let stat = statEl.value;
+    document.querySelectorAll('.scheduled-input').forEach(el => {
+        el.style.display = (stat === 'Scheduled') ? 'block' : 'none';
+    });
+};
 
 function tambahBeritaBaru() {
     if(window.role !== 'admin' && window.role !== 'mod') return Swal.fire('Ditolak', 'Hanya Mode Dewa yang bisa mempublikasikan!', 'error');
@@ -266,24 +276,24 @@ function tambahBeritaBaru() {
     document.getElementById('editPenulis').value = 'Ahmad Hafiz Arsya';
     document.getElementById('editDivisi').value = 'Kastrat';
     
+    if(document.getElementById('editStatusPublish')) document.getElementById('editStatusPublish').value = 'Publish';
+    if(document.getElementById('editJadwalTanggal')) document.getElementById('editJadwalTanggal').value = '';
+    if(document.getElementById('editJadwalJam')) document.getElementById('editJadwalJam').value = '';
+    if(typeof toggleScheduledInputs === 'function') toggleScheduledInputs();
+    
     sampulWebPBase64 = "";
     if(document.getElementById('previewCoverContainer')) document.getElementById('previewCoverContainer').classList.add('d-none');
     if(document.getElementById('editCoverFile')) document.getElementById('editCoverFile').value = ''; 
     if(redaksiQuill) redaksiQuill.root.innerHTML = '';
     
-    // Kembalikan tombol ke mode default (Buat Baru)
     let footerModal = document.querySelector('#editorModal .modal-footer');
     if(footerModal) {
         footerModal.innerHTML = `
             <div id="draftStatus" class="small text-muted fst-italic"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Menunggu ketikan...</div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="simpanArtikel('Draft')"><i class="fa-solid fa-box-archive me-1"></i> Simpan Draft</button>
-                <button type="button" class="btn btn-success rounded-pill fw-bold px-4" onclick="simpanArtikel('Publish')"><i class="fa-solid fa-paper-plane me-1"></i> Publikasikan</button>
-            </div>
+            <button type="button" class="btn btn-dark-blue rounded-pill fw-bold px-5 py-2 shadow-sm" onclick="simpanArtikel()"><i class="fa-solid fa-floppy-disk me-2"></i> Eksekusi Naskah</button>
         `;
     }
 
-    // Cek apakah ada draft yang belum dipublish
     let savedDraft = localStorage.getItem('karisma_auto_draft');
     if (savedDraft) {
         Swal.fire({
@@ -320,13 +330,16 @@ window.bukaEditCMS = function(id) {
 
     editModeBeritaId = id; 
 
-    // 1. Isi Metadata
     document.getElementById('editJudul').value = n.title || '';
     document.getElementById('editKategori').value = n.badge || 'Kajian Akademik';
     document.getElementById('editPenulis').value = n.penulis || 'Ahmad Hafiz Arsya';
     document.getElementById('editDivisi').value = n.divisi || 'Kastrat';
 
-    // 2. Isi Thumbnail Lama
+    if(document.getElementById('editStatusPublish')) document.getElementById('editStatusPublish').value = n.status || 'Publish';
+    if(document.getElementById('editJadwalTanggal')) document.getElementById('editJadwalTanggal').value = n.scheduled_date || '';
+    if(document.getElementById('editJadwalJam')) document.getElementById('editJadwalJam').value = n.scheduled_time || '';
+    if(typeof toggleScheduledInputs === 'function') toggleScheduledInputs();
+
     sampulWebPBase64 = n.img || "";
     if(sampulWebPBase64) {
         if(document.getElementById('previewCoverImg')) document.getElementById('previewCoverImg').src = sampulWebPBase64;
@@ -335,24 +348,18 @@ window.bukaEditCMS = function(id) {
         if(document.getElementById('previewCoverContainer')) document.getElementById('previewCoverContainer').classList.add('d-none');
     }
 
-    // 3. Isi Rich Text Quill
     if(redaksiQuill) {
         redaksiQuill.root.innerHTML = n.full || '';
     }
 
-    // 4. Ubah Fungsi Tombol Simpan
     let footerModal = document.querySelector('#editorModal .modal-footer');
     if(footerModal) {
         footerModal.innerHTML = `
             <div id="draftStatus" class="small text-muted fst-italic"><i class="fa-solid fa-pen-to-square me-1"></i> Mode Revisi Naskah</div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="simpanArtikel('Draft')"><i class="fa-solid fa-box-archive me-1"></i> Simpan Sbg Draft</button>
-                <button type="button" class="btn btn-success rounded-pill fw-bold px-4" onclick="simpanArtikel('Publish')"><i class="fa-solid fa-paper-plane me-1"></i> Update & Publikasikan</button>
-            </div>
+            <button type="button" class="btn btn-dark-blue rounded-pill fw-bold px-5 py-2 shadow-sm" onclick="simpanArtikel()"><i class="fa-solid fa-floppy-disk me-2"></i> Eksekusi Naskah</button>
         `;
     }
 
-    // 5. Tampilkan Modal
     new bootstrap.Modal(document.getElementById('editorModal')).show();
 };
 
@@ -368,8 +375,6 @@ function prosesGambarUpload(event) {
     reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            // BATASAN RESOLUSI DIHAPUS. BERAPAPUN UKURANNYA AKAN DIPROSES.
-            
             const canvas = document.createElement('canvas');
             const targetRatio = 16 / 9;
             const imgRatio = img.width / img.height;
@@ -422,42 +427,62 @@ function previewArtikel() {
     });
 }
 
-// MESIN SIMPAN ARTIKEL (BARU & REVISI)
-window.simpanArtikel = function(targetStatus = 'Publish') {
+// MESIN SIMPAN ARTIKEL (BARU & REVISI) - TAHAP 2
+window.simpanArtikel = function() {
     let judul = document.getElementById('editJudul').value.trim();
     let kategori = document.getElementById('editKategori').value;
     let penulis = document.getElementById('editPenulis').value.trim();
     let divisi = document.getElementById('editDivisi').value.trim();
+    
+    let statusPubEl = document.getElementById('editStatusPublish');
+    let statusPub = statusPubEl ? statusPubEl.value : 'Publish';
+    
+    let tglJadwalEl = document.getElementById('editJadwalTanggal');
+    let tglJadwal = tglJadwalEl ? tglJadwalEl.value : '';
+    
+    let jamJadwalEl = document.getElementById('editJadwalJam');
+    let jamJadwal = jamJadwalEl ? jamJadwalEl.value : '';
+    
     let isiHTML = redaksiQuill.root.innerHTML;
     
     if(!judul || !penulis || isiHTML === '<p><br></p>') {
         return Swal.fire('Lengkapi Data', 'Pastikan Judul, Penulis, dan Isi Naskah tidak kosong.', 'warning');
     }
     
-    if(!sampulWebPBase64 && targetStatus === 'Publish') {
+    if(!sampulWebPBase64 && statusPub !== 'Draft') {
         return Swal.fire('Cover Wajib', 'Silakan upload thumbnail sebelum mempublikasikan.', 'warning');
+    }
+
+    if(statusPub === 'Scheduled' && (!tglJadwal || !jamJadwal)) {
+        return Swal.fire('Jadwal Kosong', 'Tentukan tanggal dan jam tayang terlebih dahulu.', 'warning');
     }
 
     let teksMurni = redaksiQuill.getText().trim();
     let ringkasan = teksMurni.substring(0, 150) + "...";
     
     let isRevisi = editModeBeritaId !== null;
-    let pesanKonfirmasi = targetStatus === 'Publish' ? 
-        (isRevisi ? "Naskah akan diperbarui dan kembali mengudara." : "Kajian ini akan disebarkan ke publik.") : 
-        "Kajian akan disimpan secara privat sebagai Draft.";
+    
+    let pesanKonfirmasi = "";
+    if (statusPub === 'Publish') {
+        pesanKonfirmasi = isRevisi ? "Naskah diperbarui dan langsung mengudara." : "Kajian ini akan langsung disebarkan ke publik.";
+    } else if (statusPub === 'Draft') {
+        pesanKonfirmasi = "Kajian disimpan secara privat sebagai Draft.";
+    } else {
+        pesanKonfirmasi = `Akan otomatis tayang pada ${tglJadwal} pukul ${jamJadwal} WITA.`;
+    }
 
     Swal.fire({
-        title: targetStatus === 'Publish' ? (isRevisi ? 'Update Naskah?' : 'Publikasikan Sekarang?') : 'Simpan ke Draft?',
+        title: isRevisi ? 'Update Naskah?' : 'Eksekusi Naskah?',
         text: pesanKonfirmasi,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonText: targetStatus === 'Publish' ? (isRevisi ? 'Update & Publish' : 'Ya, Publikasikan!') : 'Simpan Draft',
-        confirmButtonColor: targetStatus === 'Publish' ? '#198754' : '#6c757d'
+        confirmButtonText: 'Ya, Lanjutkan!',
+        confirmButtonColor: '#198754'
     }).then((result) => {
         if (result.isConfirmed) {
             let d = new Date();
             let dateString = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
-            let timeString = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB`;
+            let timeString = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WITA`;
 
             window.db.ref('karisma_news').once('value').then(snap => {
                 let dbNewsRaw = snap.val();
@@ -475,7 +500,7 @@ window.simpanArtikel = function(targetStatus = 'Publish') {
                             ...oldData, 
                             title: judul, badge: kategori, penulis: penulis, divisi: divisi,
                             img: sampulWebPBase64 || oldData.img, short: ringkasan, full: isiHTML,
-                            status: targetStatus,
+                            status: statusPub, scheduled_date: tglJadwal, scheduled_time: jamJadwal,
                             last_edited: dateString + ' ' + timeString 
                         };
                     }
@@ -483,7 +508,8 @@ window.simpanArtikel = function(targetStatus = 'Publish') {
                     let artikelBaru = {
                         id: Date.now(), title: judul, badge: kategori, penulis: penulis, divisi: divisi,
                         img: sampulWebPBase64 || '', short: ringkasan, full: isiHTML, 
-                        date: dateString, time: timeString, status: targetStatus, last_edited: null
+                        date: dateString, time: timeString, status: statusPub, 
+                        scheduled_date: tglJadwal, scheduled_time: jamJadwal, last_edited: null
                     };
                     dbNews.unshift(artikelBaru);
                 }
@@ -496,10 +522,10 @@ window.simpanArtikel = function(targetStatus = 'Publish') {
                         if(modalIns) modalIns.hide();
                     }
                     
-                    Swal.fire('Berhasil!', targetStatus === 'Publish' ? 'Kajian mengudara.' : 'Draft aman tersimpan.', 'success').then(() => {
+                    Swal.fire('Sukses!', 'Instruksi eksekusi berhasil dicatat.', 'success').then(() => {
                         if(typeof renderCMSDashboard === 'function') renderCMSDashboard();
                         if(typeof cariBerita === 'function') cariBerita(); 
-                        if (isRevisi && typeof renderHalamanBacaPenuh === 'function' && targetStatus === 'Publish') {
+                        if (isRevisi && typeof renderHalamanBacaPenuh === 'function' && statusPub === 'Publish') {
                             renderHalamanBacaPenuh(editModeBeritaId); 
                         }
                     });
@@ -542,10 +568,17 @@ function renderCMSDashboard() {
     let tbody = document.getElementById('cmsTableBody');
     if(!tbody) return;
     
-    let dbNews = typeof getSafeNewsArray === 'function' ? getSafeNewsArray() : (window.globalData && window.globalData.karisma_news ? (Array.isArray(window.globalData.karisma_news) ? window.globalData.karisma_news : Object.values(window.globalData.karisma_news)).filter(n => n !== null && n !== undefined) : []);
+    let dbNews = window.globalData && window.globalData.karisma_news ? (Array.isArray(window.globalData.karisma_news) ? window.globalData.karisma_news : Object.values(window.globalData.karisma_news)).filter(n => n !== null && n !== undefined) : [];
     
     let filterStatusEl = document.getElementById('cmsFilterStatus');
     let filterStatus = filterStatusEl ? filterStatusEl.value : 'Semua';
+    
+    // Tambahkan filter 'Scheduled' otomatis
+    if(filterStatusEl && !Array.from(filterStatusEl.options).some(opt => opt.value === 'Scheduled')) {
+        let newOpt = document.createElement('option');
+        newOpt.value = 'Scheduled'; newOpt.text = 'Terjadwal (Scheduled)';
+        filterStatusEl.add(newOpt, 3);
+    }
     
     let filteredNews = dbNews.filter(n => {
         let status = n.status || 'Publish'; 
@@ -560,15 +593,16 @@ function renderCMSDashboard() {
 
     tbody.innerHTML = filteredNews.map(n => {
         let status = n.status || 'Publish';
-        let badgeColor = status === 'Publish' ? 'bg-success' : (status === 'Draft' ? 'bg-secondary' : 'bg-warning text-dark');
+        let badgeColor = status === 'Publish' ? 'bg-success' : (status === 'Scheduled' ? 'bg-primary' : (status === 'Draft' ? 'bg-secondary' : 'bg-warning text-dark'));
         let revisiText = n.last_edited ? `<br><small class="text-danger" style="font-size:10px;"><i class="fa-solid fa-pen-rotate me-1"></i>Direvisi: ${n.last_edited}</small>` : '';
+        let jadwalText = (status === 'Scheduled' && n.scheduled_date) ? `<br><small class="text-primary" style="font-size:10px;"><i class="fa-solid fa-clock me-1"></i>Tayang: ${n.scheduled_date} ${n.scheduled_time}</small>` : '';
         
         return `
         <tr>
             <td><span class="fw-bold text-dark-blue d-block" style="font-size:0.95rem; line-height:1.2;">${n.title}</span></td>
             <td><span class="badge bg-light text-dark border">${n.badge || '-'}</span></td>
             <td class="small fw-medium text-muted">${n.penulis || 'Kastrat'}</td>
-            <td class="small text-muted">${n.date}${revisiText}</td>
+            <td class="small text-muted">${n.date}${revisiText}${jadwalText}</td>
             <td><span class="badge ${badgeColor}">${status}</span></td>
             <td class="text-center">
                 <button class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm mb-1 mb-md-0" onclick="bukaEditCMS(${n.id})"><i class="fa-solid fa-pen"></i></button>
