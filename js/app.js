@@ -569,11 +569,7 @@ window.filterArsipPdfLengkap = function() {
     let cat = document.getElementById('filterPdfKategori') ? document.getElementById('filterPdfKategori').value : "Semua";
     let year = document.getElementById('filterPdfTahun') ? document.getElementById('filterPdfTahun').value : "Semua";
 
-    let dRepo = window.globalData.karisma_repo || [
-        { j:"Kajian Kebijakan UKT Nominal 2026", k:"Kajian Kastrat", t:"12 Juli 2026", l:"#", p:"Ahmad Hafiz Arsya", y:"2026", size:"2.5 MB" },
-        { j:"Policy Brief RUU Penyiaran", k:"Policy Brief", t:"05 Juli 2026", l:"#", p:"Divisi Kastrat", y:"2026", size:"1.2 MB" },
-        { j:"Analisis Dampak Locker Room Talk", k:"Artikel", t:"10 Agustus 2025", l:"#", p:"M. Ikhsan Tegar Alamsyah", y:"2025", size:"3.1 MB"}
-    ];
+    let dRepo = getSafeRepoArray();
 
     let filteredData = dRepo.filter(x => {
         let matchKeyword = x.j.toLowerCase().includes(kw.toLowerCase()) || (x.p && x.p.toLowerCase().includes(kw.toLowerCase()));
@@ -591,31 +587,42 @@ window.filterArsipPdfLengkap = function() {
     if (filteredData.length === 0) {
         container.innerHTML = `<div class="text-center py-5 my-4"><i class="fa-solid fa-folder-open text-muted opacity-25" style="font-size: 4rem; margin-bottom: 20px;"></i><h5 class="fw-bold text-dark-blue">Dokumen Tidak Ditemukan</h5><p class="text-muted">Gunakan kata kunci atau filter lain.</p></div>`;
     } else {
-        container.innerHTML = filteredData.map((x, i) => {
-            let originalIndex = dRepo.findIndex(item => item.j === x.j && item.l === x.l);
+        container.innerHTML = filteredData.map((x) => {
+            let thumbHTML = x.thumb ? `<img src="${x.thumb}" class="rounded-3 shadow-sm d-none d-md-block" style="width: 100px; height: 130px; object-fit: cover;">` : `<div class="bg-light rounded-3 p-3 text-danger fs-3 d-none d-md-block shadow-sm" style="min-width: 90px; text-align: center;"><i class="fa-solid fa-file-pdf"></i></div>`;
+            let statusBadge = (window.role === 'admin' || window.role === 'mod') && x.status !== 'Publish' && x.status ? `<span class="badge bg-${x.status === 'Scheduled' ? 'primary' : 'secondary'} ms-2 shadow-sm">${x.status}</span>` : '';
+
             return `
-            <div class="doc-card bg-white d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-2 hover-card" style="border: 1px solid rgba(0,0,0,0.08);">
-                <div class="d-flex align-items-start gap-3">
-                    <div class="bg-light rounded-3 p-3 text-danger fs-3 d-none d-md-block shadow-sm">
-                        <i class="fa-solid fa-file-pdf"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold text-dark-blue mb-1">${x.j}</h5>
-                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> Penulis: ${x.p || 'Divisi Kastrat'}</p>
-                        <div class="d-flex flex-wrap align-items-center gap-2">
+            <div class="doc-card bg-white d-flex flex-column flex-md-row align-items-md-start justify-content-between gap-4 mb-3 p-4 hover-card" style="border: 1px solid rgba(0,0,0,0.08); border-radius: 16px;">
+                <div class="d-flex align-items-start gap-3 w-100">
+                    ${thumbHTML}
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-1 flex-wrap">
                             <span class="badge-modern ${getBadgeClass(x.k)}">${x.k || 'Dokumen'}</span>
-                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>PDF • ${x.size || '1.5 MB'}</span>
+                            ${statusBadge}
+                        </div>
+                        <h5 class="fw-bold text-dark-blue mb-1" style="font-size: 1.15rem;">${x.j}</h5>
+                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> ${x.p || 'Divisi Kastrat'} <span class="ms-1 me-1 opacity-50">|</span> <i class="fa-solid fa-building-columns me-1"></i> ${x.org || 'HIMA Psikologi'}</p>
+                        ${x.desc ? `<p class="small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${x.desc}</p>` : ''}
+                        
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="text-muted small fw-medium"><i class="fa-solid fa-calendar me-1"></i> ${x.y || '2026'}</span>
+                            <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>PDF Access</span>
                             <span class="text-muted small fw-medium"><i class="fa-solid fa-circle mx-2" style="font-size: 4px; color: #dee2e6; vertical-align: middle;"></i>${x.t || 'Baru Saja'}</span>
                         </div>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2 mt-2 mt-md-0 justify-content-md-end">
-                    <a href="${x.l}" target="_blank" class="btn btn-download px-4"><i class="fa-solid fa-cloud-arrow-down me-1"></i> Download File</a>
-                    <button class="btn btn-delete-modern admin-only" style="display:none;" onclick="hapusRepo(${originalIndex})"><i class="fa-solid fa-trash"></i></button>
+                <div class="d-flex flex-md-column align-items-center gap-2 mt-3 mt-md-0 ms-md-auto align-self-md-stretch justify-content-center">
+                    <a href="${x.l}" target="_blank" class="btn btn-dark-blue rounded-pill fw-bold shadow-sm px-4 w-100"><i class="fa-solid fa-cloud-arrow-down me-1"></i> Akses PDF</a>
+                    ${(window.role === 'admin' || window.role === 'mod') ? `
+                    <div class="d-flex gap-2 w-100 mt-1">
+                        <button class="btn btn-sm btn-outline-primary rounded-pill flex-grow-1 shadow-sm" onclick="bukaEditDokumen(${x.id})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill flex-grow-1 shadow-sm" onclick="hapusRepo(${x.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>` : ''}
                 </div>
             </div>`;
         }).join('');
     }
+};
     
     if(window.role === 'admin' || window.role === 'mod') {
         document.querySelectorAll('#arsipPdfSection .admin-only').forEach(el => el.style.setProperty('display', 'inline-flex', 'important'));
