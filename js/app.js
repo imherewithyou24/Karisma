@@ -530,7 +530,9 @@ function renderRepositori(filterKeyword = "", filterCategory = "Semua"){
                             ${statusBadge}
                         </div>
                         <h5 class="fw-bold text-dark-blue mb-1" style="font-size: 1.15rem;">${x.j}</h5>
-                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> ${x.p || 'Divisi Kastrat'} <span class="ms-1 me-1 opacity-50">|</span> <i class="fa-solid fa-building-columns me-1"></i> ${x.org || 'HIMA Psikologi'}</p>
+                        
+                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> ${x.p || 'Divisi Kastrat'} <span class="ms-1 me-1 opacity-50">|</span> ${x.org || 'HIMA Psikologi'}</p>
+                        
                         ${x.desc ? `<p class="small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${x.desc}</p>` : ''}
                         
                         <div class="d-flex flex-wrap align-items-center gap-2">
@@ -597,7 +599,9 @@ window.filterArsipPdfLengkap = function() {
                             ${statusBadge}
                         </div>
                         <h5 class="fw-bold text-dark-blue mb-1" style="font-size: 1.15rem;">${x.j}</h5>
-                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> ${x.p || 'Divisi Kastrat'} <span class="ms-1 me-1 opacity-50">|</span> <i class="fa-solid fa-building-columns me-1"></i> ${x.org || 'HIMA Psikologi'}</p>
+                        
+                        <p class="text-muted small mb-2 fw-medium"><i class="fa-solid fa-user-pen me-1"></i> ${x.p || 'Divisi Kastrat'} <span class="ms-1 me-1 opacity-50">|</span> ${x.org || 'HIMA Psikologi'}</p>
+                        
                         ${x.desc ? `<p class="small text-muted mb-3" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5;">${x.desc}</p>` : ''}
                         
                         <div class="d-flex flex-wrap align-items-center gap-2">
