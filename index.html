@@ -674,33 +674,80 @@
         </div>
     </div>
 
-                    <!-- THUMBNAIL UPLOADER -->
-                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">2. Cover / Thumbnail (Otomatis 16:9)</h6>
-                    <div class="mb-5 bg-white p-4 rounded-4 shadow-sm border text-center position-relative">
-                        <input type="file" id="editCoverFile" class="form-control d-none" accept="image/*" onchange="prosesGambarUpload(event)">
-                        <button class="btn btn-outline-primary rounded-pill px-4 fw-bold mb-3" onclick="document.getElementById('editCoverFile').click()"><i class="fa-solid fa-upload me-2"></i>Pilih Gambar Cover</button>
-                        <p class="small text-muted mb-3">Resolusi bebas. Sistem akan otomatis memotong (crop) menjadi 16:9 dan mengoptimasi ukurannya ke format WebP.</p>
-                        
-                        <div id="previewCoverContainer" class="d-none">
-                            <hr>
-                            <p class="small fw-bold text-success mb-2"><i class="fa-solid fa-check-circle me-1"></i> Preview Hasil Crop (16:9)</p>
-                            <img id="previewCoverImg" src="" class="img-fluid rounded-3 shadow-sm mx-auto d-block" style="max-width: 100%; aspect-ratio: 16/9; object-fit: cover;">
+    <!-- MODAL CMS PERPUSTAKAAN DOKUMEN (TAHAP 3) -->
+    <div class="modal fade" id="docEditorModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-dark-blue text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-folder-open text-warning me-2"></i>CMS Perpustakaan PDF</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 p-md-5 bg-light">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Judul Dokumen</label>
+                            <input type="text" id="docJudul" class="form-control shadow-sm border-0 py-2" placeholder="Contoh: Policy Brief UKT 2026...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Nama Penulis</label>
+                            <input type="text" id="docPenulis" class="form-control shadow-sm border-0 py-2" value="Ahmad Hafiz Arsya">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Organisasi / Tim</label>
+                            <input type="text" id="docOrganisasi" class="form-control shadow-sm border-0 py-2" value="Kastrat HIMA Psikologi">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Kategori Dokumen</label>
+                            <select id="docKategori" class="form-select shadow-sm border-0 py-2">
+                                <option value="Kajian Kastrat">Kajian Kastrat</option>
+                                <option value="Policy Brief">Policy Brief</option>
+                                <option value="Riset">Riset</option>
+                                <option value="Artikel">Artikel</option>
+                                <option value="SOP / Aturan">SOP / Aturan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold text-muted">Tahun Terbit</label>
+                            <input type="number" id="docTahun" class="form-control shadow-sm border-0 py-2" value="2026">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Link File PDF (G-Drive dll)</label>
+                            <input type="url" id="docLink" class="form-control shadow-sm border-0 py-2" placeholder="https://drive.google.com/...">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Link Thumbnail Gambar (Opsional)</label>
+                            <input type="url" id="docThumbnail" class="form-control shadow-sm border-0 py-2" placeholder="Link gambar cover PDF...">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted">Deskripsi Eksekutif (Singkat)</label>
+                            <textarea id="docDeskripsi" class="form-control shadow-sm border-0" rows="3" placeholder="Tuliskan latar belakang singkat mengapa kajian ini dibuat..."></textarea>
                         </div>
                     </div>
 
-                    <!-- ISI ARTIKEL (RICH TEXT) -->
-                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mb-4">3. Naskah Lengkap</h6>
-                    <div class="bg-white rounded-4 shadow-sm border overflow-hidden">
-                        <div id="quillEditor" style="height: 400px; font-size: 1.1rem;"></div>
+                    <h6 class="fw-bold text-dark-blue border-bottom pb-2 mt-5 mb-3">Pengaturan Publikasi</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold text-muted">Status</label>
+                            <select id="docStatusPublish" class="form-select shadow-sm border-0 py-2" onchange="toggleDocScheduledInputs()">
+                                <option value="Publish">Publish Langsung</option>
+                                <option value="Scheduled">Scheduled (Terjadwal)</option>
+                                <option value="Draft">Simpan Draft</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 doc-scheduled-input" style="display: none;">
+                            <label class="form-label small fw-bold text-muted">Tanggal Tayang</label>
+                            <input type="date" id="docJadwalTanggal" class="form-control shadow-sm border-0 py-2">
+                        </div>
+                        <div class="col-md-4 doc-scheduled-input" style="display: none;">
+                            <label class="form-label small fw-bold text-muted">Jam Tayang (WITA)</label>
+                            <input type="time" id="docJadwalJam" class="form-control shadow-sm border-0 py-2">
+                        </div>
                     </div>
-
                 </div>
-                <div class="modal-footer bg-white border-top-0 py-3 d-flex justify-content-between align-items-center w-100">
-                    <div id="draftStatus" class="small text-muted fst-italic"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Auto-save aktif...</div>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold px-4" onclick="simpanArtikel('Draft')"><i class="fa-solid fa-box-archive me-1"></i> Simpan Draft</button>
-                        <button type="button" class="btn btn-success rounded-pill fw-bold px-4" onclick="simpanArtikel('Publish')"><i class="fa-solid fa-paper-plane me-1"></i> Publikasikan</button>
-                    </div>
+                <div class="modal-footer bg-white border-top-0 py-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-dark-blue rounded-pill fw-bold px-5 py-2 shadow-sm" onclick="simpanDokumen()"><i class="fa-solid fa-floppy-disk me-2"></i> Eksekusi PDF</button>
                 </div>
             </div>
         </div>
