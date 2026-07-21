@@ -488,3 +488,56 @@ html {
 .dark-mode .article-content blockquote { 
     background: #2a2a2a; 
 }
+/* ========================================= */
+/* TAHAP 1 REVISI: FIX OVERFLOW & CAROUSEL   */
+/* ========================================= */
+
+/* 1. Pembunuh Garis Putih (Overflow-x) di HP */
+html, body {
+    max-width: 100vw;
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+.container, .row {
+    max-width: 100%;
+}
+
+/* 2. Desktop Horizontal Scroll (Carousel) untuk Arsip */
+.arsip-carousel {
+    display: flex;
+    overflow-x: auto;
+    gap: 1.5rem;
+    padding-bottom: 1.5rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; /* Scroll lembut ala iOS */
+}
+.arsip-carousel::-webkit-scrollbar {
+    height: 8px;
+}
+.arsip-carousel::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+.arsip-carousel::-webkit-scrollbar-thumb {
+    background-color: #0B192C;
+    border-radius: 10px;
+}
+.arsip-carousel .news-card-wrapper {
+    flex: 0 0 380px; /* Ukuran card menyusut jadi 380px di desktop */
+    scroll-snap-align: start;
+}
+
+/* 3. Di Mobile, kembali menjadi Vertikal penuh */
+@media (max-width: 768px) {
+    .arsip-carousel {
+        flex-direction: column;
+        overflow-x: hidden;
+        padding-bottom: 0;
+    }
+    .arsip-carousel .news-card-wrapper {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+}
