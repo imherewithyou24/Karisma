@@ -269,6 +269,14 @@ function tambahBeritaBaru() {
     document.getElementById('editPenulis').value = 'Ahmad Hafiz Arsya';
     document.getElementById('editDivisi').value = 'Kastrat';
     
+    // --- FITUR MANIPULASI TANGGAL (Otomatis isi hari ini) ---
+    let d = new Date();
+    let autoDate = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
+    if(document.getElementById('editTanggalManual')) {
+        document.getElementById('editTanggalManual').value = autoDate;
+    }
+    // --------------------------------------------------------
+
     if(document.getElementById('editStatusPublish')) document.getElementById('editStatusPublish').value = 'Publish';
     if(document.getElementById('editJadwalTanggal')) document.getElementById('editJadwalTanggal').value = '';
     if(document.getElementById('editJadwalJam')) document.getElementById('editJadwalJam').value = '';
@@ -327,6 +335,15 @@ window.bukaEditCMS = function(id) {
     document.getElementById('editKategori').value = n.badge || 'Kajian Akademik';
     document.getElementById('editPenulis').value = n.penulis || 'Ahmad Hafiz Arsya';
     document.getElementById('editDivisi').value = n.divisi || 'Kastrat';
+
+    // --- FITUR MANIPULASI TANGGAL (Tarik asli, bersihkan "Baru Saja") ---
+    let d = new Date();
+    let autoDate = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
+    if(document.getElementById('editTanggalManual')) {
+        let existingDate = (n.date && n.date !== "Baru Saja") ? n.date : autoDate;
+        document.getElementById('editTanggalManual').value = existingDate;
+    }
+    // --------------------------------------------------------------------
 
     if(document.getElementById('editStatusPublish')) document.getElementById('editStatusPublish').value = n.status || 'Publish';
     if(document.getElementById('editJadwalTanggal')) document.getElementById('editJadwalTanggal').value = n.scheduled_date || '';
@@ -474,8 +491,13 @@ window.simpanArtikel = function() {
     }).then((result) => {
         if (result.isConfirmed) {
             let d = new Date();
-            let dateString = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
+            let backupDateStr = `${d.getDate()} ${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
             let timeString = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WITA`;
+
+            // --- TARIK NILAI DARI KOLOM TANGGAL MANUAL ---
+            let manualDateEl = document.getElementById('editTanggalManual');
+            let finalDateToSave = (manualDateEl && manualDateEl.value.trim() !== '') ? manualDateEl.value.trim() : backupDateStr;
+            // ---------------------------------------------
 
             window.db.ref('karisma_news').once('value').then(snap => {
                 let dbNewsRaw = snap.val();
@@ -492,16 +514,18 @@ window.simpanArtikel = function() {
                         dbNews[targetIndex] = {
                             ...oldData, 
                             title: judul, badge: kategori, penulis: penulis, divisi: divisi,
+                            date: finalDateToSave, // <-- TANGGAL DITIMPA PAKSA DI SINI
                             img: sampulWebPBase64 || oldData.img, short: ringkasan, full: isiHTML,
                             status: statusPub, scheduled_date: tglJadwal, scheduled_time: jamJadwal,
-                            last_edited: dateString + ' ' + timeString 
+                            last_edited: backupDateStr + ' ' + timeString 
                         };
                     }
                 } else {
                     let artikelBaru = {
                         id: Date.now(), title: judul, badge: kategori, penulis: penulis, divisi: divisi,
                         img: sampulWebPBase64 || '', short: ringkasan, full: isiHTML, 
-                        date: dateString, time: timeString, status: statusPub, 
+                        date: finalDateToSave, // <-- TANGGAL DITIMPA PAKSA DI SINI
+                        time: timeString, status: statusPub, 
                         scheduled_date: tglJadwal, scheduled_time: jamJadwal, last_edited: null
                     };
                     dbNews.unshift(artikelBaru);
