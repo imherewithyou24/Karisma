@@ -1,7 +1,7 @@
 // 1. Konfigurasi Satelit Firebase Karisma V2 (Sesuai kode dari Firebase barumu)
 const firebaseConfig = {
     apiKey: "AIzaSyAQKIbSfKi5G2tpA_Q_WSTjeAdWLz61PRY",
-    authDomain: "karisma-psikologi-ulm.firebaseapp.com",
+    authDomain: "karismahimapsi-ulm.my.id",
     databaseURL: "https://karisma-psikologi-ulm-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "karisma-psikologi-ulm",
     storageBucket: "karisma-psikologi-ulm.firebasestorage.app",
